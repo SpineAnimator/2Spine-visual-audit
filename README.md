@@ -1,14 +1,15 @@
-# 2Spine visual audit — public runner
+# Public CI/CD execution endpoint
 
-Dedicated public GitHub Actions execution host for the 2Spine native-frame visual and provenance audit.
+This repository contains only a minimal GitHub Actions runner wrapper.
+All source code, libraries, decoders/decompilers, tests, fixtures, and orchestration
+remain exclusively in the private `vladleopold/3Spine-core` repository.
 
-## Runner
-- GitHub-hosted `ubuntu-latest`
-- Workflow: `.github/workflows/runner.yml`
-- Unit tests run on push; real-frame review is manually dispatched after native evidence is available.
-- Audit scripts and tests are mirrored from `vladleopold/3Spine-core`.
+The ephemeral GitHub-hosted runner checks out only the required private paths at
+runtime. No source files are committed to this public repository and no source
+archive or source-code artifact is uploaded here.
 
-## Required repository secret
-- `ACCESS_TOKEN`: read access to the repository containing the licensed native Editor run and its Actions artifacts.
+Required Actions secret: `SOURCE_REPO_TOKEN` with read-only access to
+`vladleopold/3Spine-core`.
 
-The runner is allocated successfully. The mirrored test suite currently needs its full dependency closure and the real-frame job must be wired to the separate `SpineAnimator/Native-360-Editor` run artifact before it can be considered an end-to-end audit.
+Dispatch payloads must contain task identifiers only, never source files,
+credentials, PSD bytes, library contents, or private implementation details.
