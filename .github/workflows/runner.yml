@@ -5,6 +5,7 @@ name: 2Spine official-render visual anomaly audit
 on:
   pull_request:
     paths:
+      - 'scripts/audit_rendered_frames.py'
       - 'scripts/audit_clgb71_spine_render.py'
       - 'tests/test_audit_clgb71_spine_render.py'
       - 'scripts/verify_selected_rgb_native_evidence.py'
