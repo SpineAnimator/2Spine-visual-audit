@@ -16,6 +16,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/runner.yml'
       - 'scripts/audit_clgb71_spine_render.py'
       - 'tests/test_audit_clgb71_spine_render.py'
       - 'scripts/verify_selected_rgb_native_evidence.py'
