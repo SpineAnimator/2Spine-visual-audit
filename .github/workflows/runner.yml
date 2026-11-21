@@ -11,6 +11,7 @@ on:
       - 'tests/test_selected_rgb_native_evidence.py'
       - 'scripts/create_native_frame_manifest.py'
       - 'tests/test_create_native_frame_manifest.py'
+      - '.github/workflows/runner.yml'
       - '.github/workflows/clgb71-render-artistic-audit.yml'
   push:
     branches: [main]
@@ -29,16 +30,26 @@ on:
         required: false
         default: ''
         type: string
-  workflow_run:
-    workflows:
-      - '2Spine approved PSD - licensed Spine Editor 4.3.26 Linux gate'
-    types: [completed]
 
 permissions:
   contents: read
   actions: read
 
 jobs:
+
+  runner-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Confirm public GitHub-hosted Linux runner allocation
+        run: |
+          set -euo pipefail
+          echo "repository=$GITHUB_REPOSITORY"
+          echo "runner=$RUNNER_NAME"
+          echo "os=$RUNNER_OS"
+          uname -a
+          df -h "$GITHUB_WORKSPACE"
+
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +68,7 @@ jobs:
 
   review-real-spine-frames:
     needs: unit-tests
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
