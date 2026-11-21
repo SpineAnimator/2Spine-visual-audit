@@ -36,6 +36,7 @@ jobs:
             scripts/verify_selected_rgb_native_evidence.py
             tests/test_audit_clgb71_spine_render.py
             tests/test_create_native_frame_manifest.py
+            .github/workflows/verify-clgb71-editor-linux.yml
             tests/test_selected_rgb_native_evidence.py
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
