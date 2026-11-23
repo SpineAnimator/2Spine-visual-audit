@@ -27,6 +27,7 @@ runs:
         echo "runner_arch=$RUNNER_ARCH"
         uname -a
     - name: Checkout private SA source
+      id: private_source
       uses: actions/checkout@v4
       with:
         repository: SpineAnimator/spine-animator-private
@@ -34,6 +35,13 @@ runs:
         token: ${{ inputs.source-token }}
         path: private-source
         persist-credentials: false
+    - name: Record exact private source revision
+      id: private_revision
+      shell: bash
+      working-directory: private-source
+      run: |
+        set -euo pipefail
+        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
@@ -55,5 +63,6 @@ runs:
       env:
         SA_TASK: ${{ inputs.task }}
         SA_SOURCE_DIR: private-source
-        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
+        SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
       run: bash scripts/run-private-validation.sh
