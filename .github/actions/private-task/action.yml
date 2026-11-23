@@ -65,4 +65,17 @@ runs:
         SA_SOURCE_DIR: private-source
         GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
         SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
-      run: bash scripts/run-private-validation.sh
+      run: |
+        set +e
+        private_log="$RUNNER_TEMP/sa-private-task.log"
+        bash scripts/run-private-validation.sh >"$private_log" 2>&1
+        task_status=$?
+        set -e
+        echo "task=${{ inputs.task }}"
+        echo "private_source_sha=${{ steps.private_revision.outputs.sha }}"
+        echo "task_exit_code=$task_status"
+        # Public runner logs contain only numeric test summaries, never raw
+        # private-source test output, paths, fixture data, or exception payloads.
+        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests?$|^OK$|^FAILED \(failures=[0-9]+, errors=[0-9]+\) "$private_log" || true
+        rm -f "$private_log"
+        exit "$task_status"
