@@ -19,6 +19,28 @@ case "$TASK" in
     # Public runner is contents:read only and deliberately receives no OIDC write permission.
     node tests/clgb71-recovery.mjs
     ;;
+  issues-audit)
+    node --input-type=module <<'NODE'
+    const token = process.env.SA_SOURCE_TOKEN;
+    if (!token) throw new Error('SOURCE_REPO_TOKEN is required for the private issue audit');
+    const headers = { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28' };
+    const [userResponse, repoResponse, issuesResponse] = await Promise.all([
+      fetch('https://api.github.com/user', { headers }),
+      fetch('https://api.github.com/repos/SpineAnimator/spine-animator-private', { headers }),
+      fetch('https://api.github.com/repos/SpineAnimator/spine-animator-private/issues?state=open&per_page=100', { headers })
+    ]);
+    const permissions = repoResponse.ok ? (await repoResponse.json()).permissions ?? null : null;
+    console.log('SOURCE_TOKEN_SCOPE_AUDIT ' + JSON.stringify({ user_http: userResponse.status,
+      oauth_scopes: userResponse.headers.get('x-oauth-scopes') || null, repo_http: repoResponse.status,
+      repo_permissions: permissions, issues_http: issuesResponse.status,
+      accepted_permissions: issuesResponse.headers.get('x-accepted-github-permissions') || null }));
+    if (!issuesResponse.ok) throw new Error('PRIVATE_ISSUES_READ_HTTP_' + issuesResponse.status);
+    const items = await issuesResponse.json();
+    const open = items.filter(item => !item.pull_request);
+    console.log('PRIVATE_OPEN_ISSUE_AUDIT ' + JSON.stringify({ count: open.length, numbers: open.map(item => item.number) }));
+    if (open.length) process.exitCode = 1;
+    NODE
+    ;;
   cherry-mirror-audit)
     node tests/cherry-mirror-recovery.mjs
     ;;
