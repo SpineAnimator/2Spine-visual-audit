@@ -182,6 +182,29 @@ NODE
     }finally{await browser.close()}
 NODE
     ;;
+  zombie-spine-e2e)
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14'
+    python -m unittest discover -s tests -p 'test_verify_zombie_psd.py'
+    PSD_LAYER_MANIFEST=.test-output/zombie/original-layers.json python tools/verify_zombie_psd.py
+    python tools/extract_psd_rasters.py /tmp/zombie-pistol.psd .test-output/zombie/cloud-raster
+    node tools/build_psd_scene.mjs .test-output/zombie/cloud-raster .test-output/zombie zombie_pistol
+    node tools/post_cloud_fixture.mjs .test-output/zombie/cloud-request.json .test-output/zombie/psd-cloud-spine.zip
+    node tools/verify_psd_cloud_bundle.mjs .test-output/zombie/cloud-raster .test-output/zombie
+    node --test tests/pose-director.test.cjs tests/artistic-score.test.cjs tests/remote-planner.test.cjs
+    node --test tests/js-ik-pack.test.mjs tests/js-psd-scene.test.mjs
+    node --test tests/runtime-contact-evidence.test.mjs
+    node tools/verify_clgb71_rig.mjs .test-output/zombie/original-layers.json .test-output/zombie/rig-runtime-report.json .test-output/zombie/verified-ik-skeleton.json
+    PSD_LAYER_MANIFEST=.test-output/zombie/original-layers.json node --test tests/real-clgb71-rig.test.cjs
+    python tools/extract_clgb71_layers.py /tmp/zombie-pistol.psd .test-output/zombie/original-layers.json .test-output/zombie/rig-package
+    node tools/package_clgb71_ik.mjs .test-output/zombie/original-layers.json .test-output/zombie/verified-ik-skeleton.json .test-output/zombie/rig-package .test-output/zombie/original-ik-spine-4.3.26.zip .test-output/zombie/ik-package-report.json
+    node tools/export_spine_contact_poses.mjs --bundle .test-output/zombie/original-ik-spine-4.3.26.zip --out .test-output/zombie/runtime-contact-poses.json
+    python -m unittest discover -s tests -p 'test_guard_spine_contacts.py'
+    python tools/guard_spine_contacts.py --bundle .test-output/zombie/original-ik-spine-4.3.26.zip --report .test-output/zombie/attachment-contact-report.json
+    python tools/verify_clgb71_fidelity.py /tmp/zombie-pistol.psd .test-output/zombie/original-ik-spine-4.3.26.zip .test-output/zombie/visual-evidence
+    python tools/audit_spine43_candidate.py /tmp/zombie-pistol.psd .test-output/zombie/original-ik-spine-4.3.26.zip .test-output/zombie/spine43-editor-candidate-audit.json
+    node tools/verify_clgb71_ik_package.mjs .test-output/zombie/rig-package
+    PSD_CLOUD_SMOKE_DIR=.test-output/zombie SPINE_EXPECTED_CLIP=pistol_recoil node --test tests/psd-cloud-runtime.test.mjs
+    ;;
   clgb71-ik-build)
     python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3'
     python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
