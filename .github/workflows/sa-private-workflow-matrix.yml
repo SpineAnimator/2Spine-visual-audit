@@ -117,7 +117,7 @@ jobs:
             log="$RUNNER_TEMP/archive-check-$verified.log"
             git -C private-animation-library worktree add --detach "$worktree" "$ref" >/dev/null
             set +e
-            python "$worktree/scripts/verify_task_archive.py" >"$log" 2>&1
+            (cd "$worktree" && python scripts/verify_task_archive.py) >"$log" 2>&1
             result=$?
             set -e
             if [ "$result" -ne 0 ]; then
