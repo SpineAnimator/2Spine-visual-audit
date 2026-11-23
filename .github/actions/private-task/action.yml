@@ -83,7 +83,13 @@ runs:
         echo "task_exit_code=$task_status"
         # Public runner logs contain only numeric test summaries, never raw
         # private-source test output, paths, fixture data, or exception payloads.
-        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests?$|^OK$|^FAILED' "$private_log" || true
+        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests?$|^OK$|^FAILED|^PRIVATE_STAGE_[a-z0-9_]+_EXIT=[0-9]+
+        if [ "$task_status" -ne 0 ]; then
+          grep -E '^not ok [0-9]+ - ' "$private_log" | cut -c1-180 || true
+        fi
+        rm -f "$private_log"
+        exit "$task_status"
+ "$private_log" || true
         if [ "$task_status" -ne 0 ]; then
           grep -E '^not ok [0-9]+ - ' "$private_log" | cut -c1-180 || true
         fi
