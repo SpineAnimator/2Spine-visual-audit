@@ -1,0 +1,59 @@
+name: Run one private SA validation task
+description: Checks out private SA source and executes one isolated task on the public Ubuntu runner
+inputs:
+  task:
+    description: Fixed task identifier from the public workflow matrix
+    required: true
+  ref:
+    description: Private source branch or commit
+    required: true
+  source-token:
+    description: Read-only credential for the private source checkout
+    required: true
+  rust:
+    description: Whether the Rust WASM target toolchain is required
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Prove public runner allocation
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "executor_repository=SpineAnimator/2Spine-visual-audit"
+        echo "runner_name=$RUNNER_NAME"
+        echo "runner_os=$RUNNER_OS"
+        echo "runner_arch=$RUNNER_ARCH"
+        uname -a
+    - name: Checkout private SA source
+      uses: actions/checkout@v4
+      with:
+        repository: SpineAnimator/spine-animator-private
+        ref: ${{ inputs.ref }}
+        token: ${{ inputs.source-token }}
+        path: private-source
+        persist-credentials: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - name: Install locked private Node dependencies
+      shell: bash
+      working-directory: private-source
+      run: npm ci
+    - name: Set up Rust for WASM/core jobs
+      if: inputs.rust == 'true'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+    - name: Execute migrated private workflow task
+      shell: bash
+      env:
+        SA_TASK: ${{ inputs.task }}
+        SA_SOURCE_DIR: private-source
+        GITHUB_SHA: ${{ github.sha }}
+      run: bash scripts/run-private-validation.sh
