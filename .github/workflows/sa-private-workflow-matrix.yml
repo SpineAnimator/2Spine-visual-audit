@@ -97,25 +97,49 @@ jobs:
           ref: main
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: private-animation-library
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify private task manifests and content hashes
+      - name: Verify every immutable private archive branch and its task hashes
         shell: bash
         run: |
-          set +e
-          python private-animation-library/scripts/verify_task_archive.py >"$RUNNER_TEMP/archive-check.log" 2>&1
-          result=$?
-          set -e
-          if [ "$result" -eq 0 ]; then
-            grep -E '^Verified [0-9]+ task revision manifest\(s\); all listed files match size and SHA-256\.$' "$RUNNER_TEMP/archive-check.log" || true
-          else
-            echo "PRIVATE_ARCHIVE_VALIDATION_FAILED"
-            echo "exit_code=$result"
+          set -euo pipefail
+          mapfile -t archive_refs < <(git -C private-animation-library for-each-ref --format='%(refname)' refs/remotes/origin/archive/)
+          if [ "${#archive_refs[@]}" -eq 0 ]; then
+            echo "PRIVATE_ARCHIVE_BRANCHES_MISSING"
+            exit 1
           fi
-          rm -f "$RUNNER_TEMP/archive-check.log"
-          exit "$result"
+          verified=0
+          for ref in "${archive_refs[@]}"; do
+            worktree="$RUNNER_TEMP/archive-check-$verified"
+            log="$RUNNER_TEMP/archive-check-$verified.log"
+            git -C private-animation-library worktree add --detach "$worktree" "$ref" >/dev/null
+            set +e
+            python "$worktree/scripts/verify_task_archive.py" >"$log" 2>&1
+            result=$?
+            set -e
+            if [ "$result" -ne 0 ]; then
+              echo "PRIVATE_ARCHIVE_VALIDATION_FAILED"
+              echo "exit_code=$result"
+              git -C private-animation-library worktree remove --force "$worktree" >/dev/null || true
+              rm -f "$log"
+              exit "$result"
+            fi
+            count=$(sed -nE 's/^Verified ([0-9]+) task revision manifest\(s\); all listed files match size and SHA-256\.$/\1/p' "$log")
+            if [ -z "$count" ] || [ "$count" -eq 0 ]; then
+              echo "PRIVATE_ARCHIVE_VALIDATOR_RETURNED_ZERO_MANIFESTS"
+              git -C private-animation-library worktree remove --force "$worktree" >/dev/null || true
+              rm -f "$log"
+              exit 1
+            fi
+            verified=$((verified + count))
+            git -C private-animation-library worktree remove --force "$worktree" >/dev/null
+            rm -f "$log"
+          done
+          echo "PRIVATE_ARCHIVE_BRANCHES_VERIFIED=${#archive_refs[@]}"
+          echo "PRIVATE_TASK_MANIFESTS_VERIFIED=$verified"
 
   live-jobs:
     if: github.event_name == 'schedule' && github.event.schedule == '43 */2 * * *' || inputs.group == 'all' || inputs.group == 'live'
