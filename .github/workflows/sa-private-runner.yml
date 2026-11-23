@@ -1,0 +1,356 @@
+name: Execute private SA workflows on public GitHub-hosted runners
+
+on:
+  workflow_call:
+    inputs:
+      task:
+        description: Fixed SA task identifier
+        required: true
+        type: string
+      runner_ref:
+        description: Exact public runner commit containing this reusable workflow and its composite action
+        required: true
+        type: string
+      rust:
+        description: Install the Rust WASM target toolchain
+        required: false
+        type: boolean
+        default: false
+      python_version:
+        description: Python version for the private task
+        required: false
+        type: string
+        default: '3.11'
+      artifact_name:
+        description: Optional private workflow artifact name
+        required: false
+        type: string
+        default: ''
+      artifact_path:
+        description: Optional path inside the private checkout to upload to the caller's private run
+        required: false
+        type: string
+        default: ''
+      retention_days:
+        description: Private artifact retention period
+        required: false
+        type: number
+        default: 7
+      confirm_public_upload:
+        description: Explicit opt-in for the synthetic public Catbox upload task
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ACCESS_TOKEN:
+        required: false
+  pull_request:
+    paths:
+      - '.github/actions/private-task/action.yml'
+      - '.github/workflows/sa-private-runner.yml'
+      - 'scripts/run-private-validation.sh'
+
+jobs:
+  public-smoke:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Reusable runner integration smoke • public Ubuntu
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout this PR's runner tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout "https://github.com/${GITHUB_REPOSITORY}.git" runner-tools
+          git -C runner-tools fetch --depth=1 origin "${GITHUB_HEAD_REF}"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Execute a read-only task against the private source
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: runtime-contact
+          repository: SpineAnimator/spine-animator-private
+          ref: main
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          rust: false
+          persist-credentials: false
+
+  read-only:
+    if: >-
+      github.event_name == 'workflow_call' &&
+      !contains(fromJSON('["catbox-clgb71-recovery","catbox-d4mmri-recovery","psd-cache-autoheal","wasm-publish","clgb71-ik-build","keep-issues-empty","sa-asset-transport-live"]'), inputs.task)
+    name: ${{ inputs.task }} • public Ubuntu
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pinned public runner tools
+        shell: bash
+        env:
+          RUNNER_REF: ${{ inputs.runner_ref }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/SpineAnimator/2Spine-visual-audit.git runner-tools
+          git -C runner-tools fetch --depth=1 origin "$RUNNER_REF"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Execute private task on public runner
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: ${{ inputs.task }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          source-token: ${{ github.token }}
+          rust: ${{ inputs.rust }}
+          python-version: ${{ inputs.python_version }}
+          persist-credentials: 'false'
+      - name: Upload task artifact to the caller's private run
+        if: success() && inputs.artifact_name != '' && inputs.artifact_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ inputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+
+  oidc-recovery:
+    if: >-
+      github.event_name == 'workflow_call' &&
+      contains(fromJSON('["catbox-clgb71-recovery","catbox-d4mmri-recovery"]'), inputs.task)
+    name: ${{ inputs.task }} • public Ubuntu with private caller OIDC
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout pinned public runner tools
+        shell: bash
+        env:
+          RUNNER_REF: ${{ inputs.runner_ref }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/SpineAnimator/2Spine-visual-audit.git runner-tools
+          git -C runner-tools fetch --depth=1 origin "$RUNNER_REF"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Verify OIDC token retains the private caller workflow identity
+        shell: bash
+        env:
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+          EXPECTED_REF: ${{ github.ref }}
+          EXPECTED_WORKFLOW_REF: ${{ github.workflow_ref }}
+          EXPECTED_AUDIENCE: 2spine-public-psd-cache
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const endpoint = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
+          endpoint.searchParams.set('audience', process.env.EXPECTED_AUDIENCE);
+          const response = await fetch(endpoint, {
+            headers: { authorization: `Bearer ${process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}` }
+          });
+          if (!response.ok) throw new Error(`OIDC claim probe failed: HTTP ${response.status}`);
+          const body = await response.json();
+          const token = body.value;
+          const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+          const observed = {
+            repository: claims.repository,
+            ref: claims.ref,
+            workflow_ref: claims.workflow_ref,
+            job_workflow_ref: claims.job_workflow_ref,
+            aud: claims.aud,
+            sub: claims.sub
+          };
+          if (claims.repository !== process.env.EXPECTED_REPOSITORY ||
+              claims.ref !== process.env.EXPECTED_REF ||
+              claims.workflow_ref !== process.env.EXPECTED_WORKFLOW_REF ||
+              claims.aud !== process.env.EXPECTED_AUDIENCE) {
+            throw new Error('OIDC claims do not preserve the private caller identity: ' + JSON.stringify(observed));
+          }
+          console.log('OIDC_CALLER_CLAIMS_VERIFIED ' + JSON.stringify(observed));
+          NODE
+      - name: Execute OIDC-protected private recovery task
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: ${{ inputs.task }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          source-token: ${{ github.token }}
+          rust: false
+          persist-credentials: 'false'
+
+  actions-write:
+    if: github.event_name == 'workflow_call' && inputs.task == 'psd-cache-autoheal'
+    name: PSD cache autoheal • public Ubuntu
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout pinned public runner tools
+        shell: bash
+        env:
+          RUNNER_REF: ${{ inputs.runner_ref }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/SpineAnimator/2Spine-visual-audit.git runner-tools
+          git -C runner-tools fetch --depth=1 origin "$RUNNER_REF"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Execute private auto-recovery with caller-scoped GITHUB_TOKEN
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: psd-cache-autoheal
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          source-token: ${{ github.token }}
+          rust: false
+          persist-credentials: 'false'
+      - name: Preserve private autoheal report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2spine-psd-cache-autoheal-report
+          path: private-source/reports/psd-cache-autoheal.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  repo-write:
+    if: github.event_name == 'workflow_call' && contains(fromJSON('["wasm-publish","clgb71-ik-build"]'), inputs.task)
+    name: ${{ inputs.task }} • public Ubuntu with private repo write scope
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout pinned public runner tools
+        shell: bash
+        env:
+          RUNNER_REF: ${{ inputs.runner_ref }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/SpineAnimator/2Spine-visual-audit.git runner-tools
+          git -C runner-tools fetch --depth=1 origin "$RUNNER_REF"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Execute private build or publish task
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: ${{ inputs.task }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          source-token: ${{ github.token }}
+          rust: ${{ inputs.rust }}
+          python-version: ${{ inputs.python_version }}
+          persist-credentials: ${{ inputs.task == 'wasm-publish' }}
+      - name: Upload original private IK ZIP and integrity evidence
+        id: source_upload
+        if: success() && inputs.task == 'clgb71-ik-build'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: clgb71-original-38layer-ik-spine-json-zip
+          path: |
+            private-source/.test-output/clgb71-ik/original-ik-spine-4.3.26.zip
+            private-source/.test-output/clgb71-ik/rig-runtime-report.json
+            private-source/.test-output/clgb71-ik/runtime-contact-poses.json
+            private-source/.test-output/clgb71-ik/ik-package-report.json
+            private-source/.test-output/clgb71-ik/psd-effect-evidence/fidelity-report.json
+            private-source/.test-output/clgb71-ik/psd-effect-evidence/psd-effect-footprints.json
+            private-source/.test-output/clgb71-ik/psd-rgb-candidate/color-inversion-report.json
+            private-source/.test-output/clgb71-ik/psd-rgb-candidate/derived-images/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve exact source ZIP in PRIVATE draft Release if Actions artifact quota is exhausted
+        if: ${{ always() && inputs.task == 'clgb71-ik-build' && steps.source_upload.outcome == 'failure' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          test -n "${GH_TOKEN:-}" || { echo "::error::ACCESS_TOKEN required for private source evidence fallback"; exit 1; }
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = true || {
+            echo "::error::Refusing to place original PSD/Spine assets in a public release"; exit 1;
+          }
+          ZIP=private-source/.test-output/clgb71-ik/original-ik-spine-4.3.26.zip
+          RECEIPT=private-source/.test-output/clgb71-ik/ik-package-report.json
+          test -s "$ZIP" && test -s "$RECEIPT"
+          python3 - "$ZIP" "$RECEIPT" <<'PY'
+          import hashlib,json,sys,zipfile
+          z,r=sys.argv[1:]
+          doc=json.load(open(r))
+          assert doc['source_sha256']=='7adee866547a3b3cc9838b655cf70865980c5dba00313373cbf903fed776c7b2'
+          assert doc['zip_sha256']==hashlib.sha256(open(z,'rb').read()).hexdigest()
+          with zipfile.ZipFile(z) as archive:
+              assert archive.testzip() is None
+              assert len(archive.namelist())==40
+          PY
+          TAG="evidence/clgb71-source/${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}"
+          gh release create "$TAG" \
+            "$ZIP" "$RECEIPT" \
+            private-source/.test-output/clgb71-ik/psd-rgb-candidate/color-inversion-report.json \
+            --draft --latest=false --target "$GITHUB_SHA" \
+            --title "Private validated clgb71 source ZIP run $GITHUB_RUN_ID" \
+            --notes "Private technical source ZIP fallback after Actions artifact quota refusal; derived RGB not licensed-Editor-approved."
+          gh release view "$TAG" --json isDraft,tagName,assets \
+            | jq -e --arg tag "$TAG" '.isDraft == true and .tagName == $tag and
+                 ([.assets[].name] | index("original-ik-spine-4.3.26.zip") != null and
+                  index("ik-package-report.json") != null)'
+          echo "PRIVATE_SOURCE_ZIP_FALLBACK_STORED $TAG"
+
+  issues-write:
+    if: github.event_name == 'workflow_call' && inputs.task == 'keep-issues-empty'
+    name: Keep private issue list empty • public Ubuntu
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Close new and outstanding issues without touching pull requests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const reason = "This repository is configured not to use GitHub Issues. Work is tracked and executed through the repository's automation instead. This issue is closed automatically; its discussion remains available in the closed history.";
+            if (context.eventName === "issues" && context.payload.issue && !context.payload.issue.pull_request) {
+              const number = context.payload.issue.number;
+              const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number });
+              if (issue.state === "open" && !issue.pull_request) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: reason });
+                await github.rest.issues.update({ owner, repo, issue_number: number, state: "closed", state_reason: "not_planned" });
+                core.info(`Closed issue #${number}.`);
+              }
+            }
+            let page = 1;
+            while (true) {
+              const { data: items } = await github.rest.issues.listForRepo({ owner, repo, state: "open", per_page: 100, page });
+              if (items.length === 0) break;
+              for (const issue of items) {
+                if (issue.pull_request) continue;
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: reason });
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: "closed", state_reason: "not_planned" });
+                core.info(`Closed issue #${issue.number}.`);
+              }
+              if (items.length < 100) break;
+              page++;
+            }
+
+  asset-upload:
+    if: github.event_name == 'workflow_call' && inputs.task == 'sa-asset-transport-live' && inputs.confirm_public_upload
+    name: Confirmed synthetic Catbox upload • public Ubuntu
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pinned public runner tools
+        shell: bash
+        env:
+          RUNNER_REF: ${{ inputs.runner_ref }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/SpineAnimator/2Spine-visual-audit.git runner-tools
+          git -C runner-tools fetch --depth=1 origin "$RUNNER_REF"
+          git -C runner-tools checkout --detach FETCH_HEAD
+      - name: Upload the approved synthetic fixture only
+        uses: ./runner-tools/.github/actions/private-task
+        with:
+          task: sa-asset-transport-live
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          source-token: ${{ github.token }}
+          rust: false
+          persist-credentials: 'false'
