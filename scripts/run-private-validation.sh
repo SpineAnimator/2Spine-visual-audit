@@ -171,6 +171,10 @@ NODE
     node scripts/verify-art-evidence.cjs quality/reviews/cherry-art-head-unapproved.json "$GITHUB_SHA" --require-blocked
     node --test tests/js-ik-pack.test.mjs tests/js-psd-scene.test.mjs
     ;;
+  asset-transport-feature-validation)
+    node --test tests/sa-agent-resize-bridge.test.cjs tests/sa-browser-adapter-exports.test.cjs tests/sa-production-pipeline.test.cjs tests/sa-reference-library-adapter.test.cjs tests/sa-production-adapters.test.cjs tests/archive-handler.test.cjs tests/asset-upload-client.test.cjs tests/asset-transport.test.cjs tests/chatgpt-review-adapter.test.cjs tests/model-gateway.test.cjs tests/sa-agent-runtime.test.cjs tests/sa-agent.test.cjs tests/sa-browser-runtime.test.cjs tests/sa-edge-contract.test.cjs tests/sa-edge-runtime.test.cjs tests/scene-ir-animation-planner.test.cjs
+    npm run bench:sa-vision
+    ;;
   asset-transport-unit)
     node --test tests/sa-agent-resize-bridge.test.cjs tests/sa-browser-adapter-exports.test.cjs tests/sa-production-pipeline.test.cjs tests/sa-reference-library-adapter.test.cjs tests/sa-production-adapters.test.cjs tests/archive-handler.test.cjs tests/asset-upload-client.test.cjs tests/asset-transport.test.cjs tests/chatgpt-review-adapter.test.cjs tests/model-gateway.test.cjs tests/sa-agent-runtime.test.cjs tests/sa-agent.test.cjs tests/sa-browser-runtime.test.cjs tests/sa-edge-contract.test.cjs tests/sa-edge-runtime.test.cjs tests/scene-ir-animation-planner.test.cjs
     npm run bench:sa-vision
