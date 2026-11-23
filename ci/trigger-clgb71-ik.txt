@@ -1,0 +1,1 @@
+One-shot run: validate private CLGB71 source PSD, visual fidelity, rig packaging and Spine 4.3.26 JSON/atlas/PNG ZIP. No production deployment or public asset upload.
