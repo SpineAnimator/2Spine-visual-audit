@@ -86,6 +86,10 @@ jobs:
       max-parallel: 4
       matrix:
         include:
+          - task: browser-smoke
+            ref: main
+            timeout: 15
+            rust: false
           - task: catbox-diagnostic
             ref: main
             timeout: 6
@@ -163,10 +167,6 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-          - task: browser-smoke
-            ref: main
-            timeout: 15
-            rust: false
           - task: psd-1000
             ref: main
             timeout: 60
