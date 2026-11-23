@@ -105,6 +105,10 @@ jobs:
             ref: main
             timeout: 20
             rust: false
+          - task: asset-transport-feature-validation
+            ref: feat/sa-core-vision-animation-planner
+            timeout: 20
+            rust: false
           - task: semantic-contour-validation
             ref: feat/sa-core-vision-animation-planner
             timeout: 40
