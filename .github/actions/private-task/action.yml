@@ -26,6 +26,20 @@ runs:
         echo "runner_os=$RUNNER_OS"
         echo "runner_arch=$RUNNER_ARCH"
         uname -a
+    - id: private_access
+      name: Check private artifact permission (no credential output)
+      shell: bash
+      env:
+        SOURCE_TOKEN: ${{ inputs.source-token }}
+      run: |
+        set -euo pipefail
+        response=$(curl -fsSL -H "Authorization: Bearer $SOURCE_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/SpineAnimator/spine-animator-private)
+        private_repo=$(printf '%s' "$response" | jq -r '.private')
+        can_push=$(printf '%s' "$response" | jq -r '.permissions.push // false')
+        echo "private_repository=$private_repo"
+        echo "private_repository_push_permission=$can_push"
+        echo "private=$private_repo" >> "$GITHUB_OUTPUT"
+        echo "push=$can_push" >> "$GITHUB_OUTPUT"
     - name: Checkout private SA source
       uses: actions/checkout@v4
       with:
