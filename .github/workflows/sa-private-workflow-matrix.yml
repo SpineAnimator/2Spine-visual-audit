@@ -33,6 +33,17 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
+  reusable-runner-smoke:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Reusable private workflow call • public Ubuntu
+    uses: ./.github/workflows/sa-private-runner.yml
+    with:
+      task: runtime-contact
+      runner_ref: ${{ github.sha }}
+      source_repository: SpineAnimator/spine-animator-private
+      source_ref: main
+    secrets: inherit
+
   reviewer-contract:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     name: Catbox reviewer contract • public Ubuntu
