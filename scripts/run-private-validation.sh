@@ -11,6 +11,10 @@ case "$TASK" in
   catbox-source-smoke)
     node --test tests/live-catbox.test.mjs
     ;;
+  catbox-review-download)
+    node --check engine/chatgpt-review-adapter.js
+    node --test tests/chatgpt-review-adapter.test.cjs
+    ;;
   cherry-mirror-audit)
     node tests/cherry-mirror-recovery.mjs
     ;;
