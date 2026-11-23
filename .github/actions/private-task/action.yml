@@ -1,15 +1,21 @@
 name: Run one private SA validation task
 description: Checks out private SA source and executes one isolated task on the public Ubuntu runner
 inputs:
+  repository:
+    description: Private source repository; defaults to the SA private repository
+    required: false
+    default: SpineAnimator/spine-animator-private
   task:
     description: Fixed task identifier from the public workflow matrix
     required: true
   ref:
     description: Private source branch or commit
-    required: true
+    required: false
+    default: main
   source-token:
-    description: Read-only credential for the private source checkout
-    required: true
+    description: Optional private checkout credential; defaults to the caller GITHUB_TOKEN
+    required: false
+    default: ''
   rust:
     description: Whether the Rust WASM target toolchain is required
     required: false
@@ -18,6 +24,10 @@ inputs:
     description: Python version for source validation task
     required: false
     default: '3.11'
+  persist-credentials:
+    description: Persist caller credentials in the private checkout only for tasks that must push to the caller repository
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -34,11 +44,11 @@ runs:
       id: private_source
       uses: actions/checkout@v4
       with:
-        repository: SpineAnimator/spine-animator-private
+        repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
-        token: ${{ inputs.source-token }}
+        token: ${{ inputs.source-token || github.token }}
         path: private-source
-        persist-credentials: false
+        persist-credentials: ${{ inputs.persist-credentials }}
     - name: Record exact private source revision
       id: private_revision
       shell: bash
@@ -72,10 +82,12 @@ runs:
         SA_SOURCE_DIR: private-source
         GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
         SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         set +e
+        runner_root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
         private_log="$RUNNER_TEMP/sa-private-task.log"
-        bash scripts/run-private-validation.sh >"$private_log" 2>&1
+        bash "$runner_root/scripts/run-private-validation.sh" >"$private_log" 2>&1
         task_status=$?
         set -e
         echo "task=${{ inputs.task }}"
