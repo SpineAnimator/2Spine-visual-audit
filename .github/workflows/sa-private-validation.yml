@@ -41,8 +41,7 @@ jobs:
         run: npm ci
       - name: Run semantic contour and reconstruction tests
         run: |
-          node --test tests/semantic-contour-renderer.test.cjs tests/reconstruction-qa.test.cjs tests/layer-budget-optimizer.test.cjs tests/semantic-anatomy-plan.test.cjs tests/sa-semantic-contour-adapter.test.cjs tests/scene-ir-animation-planner.test.cjs tests/vision-holes.test.cjs tests/job-handoff.test.mjs tests/job-handoff-http.test.mjs tests/sa-agent.test.cjs
-          npm test
+          node --test tests/semantic-contour-renderer.test.cjs tests/reconstruction-qa.test.cjs tests/layer-budget-optimizer.test.cjs tests/semantic-anatomy-plan.test.cjs tests/sa-semantic-contour-adapter.test.cjs tests/scene-ir-animation-planner.test.cjs tests/vision-holes.test.cjs tests/semantic-contour-internal.test.mjs tests/job-handoff.test.mjs tests/job-handoff-http.test.mjs tests/sa-agent.test.cjs
   generator:
     if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'generator'
     runs-on: ubuntu-24.04
