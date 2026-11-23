@@ -1,0 +1,195 @@
+name: Migrated private SA jobs on public Ubuntu
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: Which migrated job group to execute
+        required: true
+        default: unit
+        type: choice
+        options:
+          - all
+          - unit
+          - live
+          - expensive
+permissions:
+  contents: read
+concurrency:
+  group: sa-migrated-private-jobs
+  cancel-in-progress: false
+jobs:
+  migrated-job:
+    if: inputs.group == 'all' || inputs.group == matrix.group
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - task: catbox-diagnostic
+            group: live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: catbox-source-smoke
+            group: live
+            ref: main
+            timeout: 5
+            rust: false
+          - task: cherry-mirror-audit
+            group: live
+            ref: main
+            timeout: 5
+            rust: false
+          - task: cloud-smoke
+            group: live
+            ref: main
+            timeout: 8
+            rust: false
+          - task: drive-source-smoke
+            group: live
+            ref: main
+            timeout: 5
+            rust: false
+          - task: mcp-real-psd
+            group: live
+            ref: main
+            timeout: 15
+            rust: false
+          - task: mcp-source-smoke
+            group: live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: mcp-zip-live
+            group: live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: nf4g80-probe
+            group: live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: psd-cloud-smoke
+            group: live
+            ref: main
+            timeout: 12
+            rust: false
+          - task: psd-route-audit
+            group: live
+            ref: main
+            timeout: 10
+            rust: false
+          - task: recover-zombie-source
+            group: live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: storage-diagnostic
+            group: live
+            ref: main
+            timeout: 5
+            rust: false
+          - task: zombie-psd
+            group: live
+            ref: main
+            timeout: 10
+            rust: false
+          - task: browser-smoke
+            group: expensive
+            ref: main
+            timeout: 15
+            rust: false
+          - task: psd-1000
+            group: expensive
+            ref: main
+            timeout: 60
+            rust: false
+          - task: clgb71-ik-build
+            group: expensive
+            ref: main
+            timeout: 25
+            rust: false
+          - task: volume360
+            group: expensive
+            ref: main
+            timeout: 20
+            rust: false
+          - task: pose-director
+            group: unit
+            ref: main
+            timeout: 12
+            rust: false
+          - task: psd-cache-unit
+            group: unit
+            ref: main
+            timeout: 5
+            rust: false
+          - task: runtime-contact
+            group: unit
+            ref: main
+            timeout: 8
+            rust: false
+          - task: site-command
+            group: unit
+            ref: main
+            timeout: 12
+            rust: false
+          - task: rust-core
+            group: unit
+            ref: main
+            timeout: 20
+            rust: true
+          - task: full-node-tests
+            group: unit
+            ref: main
+            timeout: 25
+            rust: false
+          - task: asset-transport-unit
+            group: unit
+            ref: main
+            timeout: 15
+            rust: false
+    name: ${{ matrix.task }} • Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeout }}
+    steps:
+      - name: Prove public runner allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "executor_repository=SpineAnimator/2Spine-visual-audit"
+          echo "runner_name=$RUNNER_NAME"
+          echo "runner_os=$RUNNER_OS"
+          echo "runner_arch=$RUNNER_ARCH"
+          uname -a
+      - name: Checkout private SA source
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: ${{ matrix.ref }}
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install locked private Node dependencies
+        working-directory: private-source
+        run: npm ci
+      - name: Set up Rust for WASM/core jobs
+        if: matrix.rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Execute migrated private workflow task
+        shell: bash
+        env:
+          SA_TASK: ${{ matrix.task }}
+          SA_SOURCE_DIR: private-source
+          GITHUB_SHA: ${{ github.sha }}
+        run: bash scripts/run-private-validation.sh
