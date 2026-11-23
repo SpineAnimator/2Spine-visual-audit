@@ -233,21 +233,31 @@ NODE
     PSD_CLOUD_SMOKE_DIR=.test-output/zombie SPINE_EXPECTED_CLIP=pistol_recoil node --test tests/psd-cloud-runtime.test.mjs
     ;;
   clgb71-ik-build)
-    python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3' 'scipy>=1.10,<2'
-    python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
-    python -m unittest discover -s tests -p 'test_reconstruct_psd_rgb_appearance.py'
-    PSD_FORCE_VERIFIED_CACHE=1 python tools/verify_zombie_psd.py
-    PSD_LAYER_MANIFEST=.test-output/clgb71-ik/original-layers.json python tools/verify_zombie_psd.py
-    node --test tests/js-ik-pack.test.mjs
-    node --test tests/real-clgb71-rig.test.cjs
-    node --test tests/runtime-contact-evidence.test.mjs
-    PSD_LAYER_MANIFEST=.test-output/clgb71-ik/original-layers.json node tools/verify_clgb71_rig.mjs .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/rig-runtime-report.json .test-output/clgb71-ik/skeleton.json
-    python tools/extract_clgb71_layers.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/package
-    node tools/package_clgb71_ik.mjs .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/skeleton.json .test-output/clgb71-ik/package .test-output/clgb71-ik/original-ik-spine-4.3.26.zip .test-output/clgb71-ik/ik-package-report.json
-    node tools/export_spine_contact_poses.mjs --bundle .test-output/clgb71-ik/original-ik-spine-4.3.26.zip --out .test-output/clgb71-ik/runtime-contact-poses.json
-    node tools/verify_clgb71_ik_package.mjs .test-output/clgb71-ik/package
-    python tools/verify_clgb71_fidelity.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/original-ik-spine-4.3.26.zip .test-output/clgb71-ik/psd-effect-evidence
-    python tools/reconstruct_psd_rgb_appearance.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/package/images .test-output/clgb71-ik/psd-rgb-candidate
+    run_private_stage() {
+      local stage="$1"
+      shift
+      set +e
+      "$@"
+      local status=$?
+      set -e
+      echo "PRIVATE_STAGE_${stage}_EXIT=$status"
+      return "$status"
+    }
+    run_private_stage dependency_install python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3' 'scipy>=1.10,<2'
+    run_private_stage psd_style_tests python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
+    run_private_stage rgb_reconstruction_tests python -m unittest discover -s tests -p 'test_reconstruct_psd_rgb_appearance.py'
+    run_private_stage verified_source_cache env PSD_FORCE_VERIFIED_CACHE=1 python tools/verify_zombie_psd.py
+    run_private_stage source_psd_validation env PSD_LAYER_MANIFEST=.test-output/clgb71-ik/original-layers.json python tools/verify_zombie_psd.py
+    run_private_stage js_ik_pack_tests node --test tests/js-ik-pack.test.mjs
+    run_private_stage rig_tests node --test tests/real-clgb71-rig.test.cjs
+    run_private_stage contact_evidence_tests node --test tests/runtime-contact-evidence.test.mjs
+    run_private_stage spine_runtime_rig env PSD_LAYER_MANIFEST=.test-output/clgb71-ik/original-layers.json node tools/verify_clgb71_rig.mjs .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/rig-runtime-report.json .test-output/clgb71-ik/skeleton.json
+    run_private_stage raster_extraction python tools/extract_clgb71_layers.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/package
+    run_private_stage zip_packaging node tools/package_clgb71_ik.mjs .test-output/clgb71-ik/original-layers.json .test-output/clgb71-ik/skeleton.json .test-output/clgb71-ik/package .test-output/clgb71-ik/original-ik-spine-4.3.26.zip .test-output/clgb71-ik/ik-package-report.json
+    run_private_stage contact_pose_export node tools/export_spine_contact_poses.mjs --bundle .test-output/clgb71-ik/original-ik-spine-4.3.26.zip --out .test-output/clgb71-ik/runtime-contact-poses.json
+    run_private_stage package_runtime_validation node tools/verify_clgb71_ik_package.mjs .test-output/clgb71-ik/package
+    run_private_stage fidelity_validation python tools/verify_clgb71_fidelity.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/original-ik-spine-4.3.26.zip .test-output/clgb71-ik/psd-effect-evidence
+    run_private_stage rgb_candidate python tools/reconstruct_psd_rgb_appearance.py /tmp/zombie-pistol.psd .test-output/clgb71-ik/package/images .test-output/clgb71-ik/psd-rgb-candidate
     ;;
   *)
     echo "::error::Unknown SA validation task: $TASK"
