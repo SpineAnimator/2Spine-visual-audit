@@ -52,7 +52,7 @@ on:
 
 jobs:
   public-smoke:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'pull_request' && inputs.task == '' && github.event.pull_request.head.repo.full_name == github.repository
     name: Reusable runner integration smoke • public Ubuntu
     runs-on: ubuntu-24.04
     permissions:
@@ -77,7 +77,7 @@ jobs:
 
   read-only:
     if: >-
-      github.event_name == 'workflow_call' &&
+      inputs.task != '' &&
       !contains(fromJSON('["catbox-clgb71-recovery","catbox-d4mmri-recovery","psd-cache-autoheal","wasm-publish","clgb71-ik-build","keep-issues-empty","sa-asset-transport-live"]'), inputs.task)
     name: ${{ inputs.task }} • public Ubuntu
     runs-on: ubuntu-24.04
@@ -114,7 +114,7 @@ jobs:
 
   oidc-recovery:
     if: >-
-      github.event_name == 'workflow_call' &&
+      inputs.task != '' &&
       contains(fromJSON('["catbox-clgb71-recovery","catbox-d4mmri-recovery"]'), inputs.task)
     name: ${{ inputs.task }} • public Ubuntu with private caller OIDC
     runs-on: ubuntu-24.04
@@ -177,7 +177,7 @@ jobs:
           persist-credentials: 'false'
 
   actions-write:
-    if: github.event_name == 'workflow_call' && inputs.task == 'psd-cache-autoheal'
+    if: inputs.task == 'psd-cache-autoheal'
     name: PSD cache autoheal • public Ubuntu
     runs-on: ubuntu-24.04
     permissions:
@@ -212,7 +212,7 @@ jobs:
           retention-days: 7
 
   repo-write:
-    if: github.event_name == 'workflow_call' && contains(fromJSON('["wasm-publish","clgb71-ik-build"]'), inputs.task)
+    if: contains(fromJSON('["wasm-publish","clgb71-ik-build"]'), inputs.task)
     name: ${{ inputs.task }} • public Ubuntu with private repo write scope
     runs-on: ubuntu-24.04
     permissions:
@@ -293,7 +293,7 @@ jobs:
           echo "PRIVATE_SOURCE_ZIP_FALLBACK_STORED $TAG"
 
   issues-write:
-    if: github.event_name == 'workflow_call' && inputs.task == 'keep-issues-empty'
+    if: inputs.task == 'keep-issues-empty'
     name: Keep private issue list empty • public Ubuntu
     runs-on: ubuntu-24.04
     permissions:
@@ -330,7 +330,7 @@ jobs:
             }
 
   asset-upload:
-    if: github.event_name == 'workflow_call' && inputs.task == 'sa-asset-transport-live' && inputs.confirm_public_upload
+    if: inputs.task == 'sa-asset-transport-live' && inputs.confirm_public_upload
     name: Confirmed synthetic Catbox upload • public Ubuntu
     runs-on: ubuntu-24.04
     permissions:
