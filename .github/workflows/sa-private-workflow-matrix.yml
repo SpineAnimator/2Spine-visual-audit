@@ -1,5 +1,11 @@
 name: Migrated private SA jobs on public Ubuntu
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sa-private-workflow-matrix.yml'
+      - '.github/actions/private-task/action.yml'
+      - 'scripts/run-private-validation.sh'
   push:
     branches: [main]
     paths:
@@ -66,6 +72,23 @@ jobs:
           task: ${{ matrix.task }}
           ref: ${{ matrix.ref }}
           rust: ${{ matrix.rust }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
+
+  reviewer-contract:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Catbox reviewer contract • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/private-task
+        with:
+          task: catbox-review-download
+          ref: feat/catbox-review-download-contract
+          rust: false
           source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
 
   live-jobs:
