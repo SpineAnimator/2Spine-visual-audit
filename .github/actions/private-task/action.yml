@@ -58,6 +58,9 @@ runs:
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: wasm32-unknown-unknown
+    - name: Validate public task dispatcher syntax
+      shell: bash
+      run: bash -n scripts/run-private-validation.sh
     - name: Execute migrated private workflow task
       shell: bash
       env:
