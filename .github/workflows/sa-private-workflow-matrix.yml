@@ -7,7 +7,7 @@ on:
       - '.github/actions/private-task/action.yml'
       - 'scripts/run-private-validation.sh'
   schedule:
-    - cron: '43 4 * * *'
+    - cron: '43 */2 * * *'
   workflow_dispatch:
     inputs:
       group:
@@ -20,6 +20,7 @@ on:
           - unit
           - live
           - expensive
+          - extended
 permissions:
   contents: read
 concurrency:
@@ -27,7 +28,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   unit-jobs:
-    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'unit'
+    if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.group == 'all' || inputs.group == 'unit'
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -53,14 +54,6 @@ jobs:
             ref: main
             timeout: 20
             rust: true
-          - task: full-node-tests
-            ref: main
-            timeout: 25
-            rust: false
-          - task: asset-transport-unit
-            ref: main
-            timeout: 15
-            rust: false
     name: ${{ matrix.task }} • Ubuntu 24.04
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.timeout }}
@@ -137,6 +130,35 @@ jobs:
           - task: zombie-psd
             ref: main
             timeout: 10
+            rust: false
+    name: ${{ matrix.task }} • Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeout }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/private-task
+        with:
+          task: ${{ matrix.task }}
+          ref: ${{ matrix.ref }}
+          rust: ${{ matrix.rust }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
+  extended-jobs:
+    if: inputs.group == 'all' || inputs.group == 'extended'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - task: full-node-tests
+            ref: main
+            timeout: 25
+            rust: false
+          - task: asset-transport-unit
+            ref: main
+            timeout: 15
             rust: false
     name: ${{ matrix.task }} • Ubuntu 24.04
     runs-on: ubuntu-24.04
