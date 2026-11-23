@@ -81,6 +81,42 @@ jobs:
           rust: ${{ matrix.rust }}
           source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
 
+  archive-validation:
+    if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.group == 'all' || inputs.group == 'unit'
+    name: private task archive integrity • Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout private animation archive without persisting credentials
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animation-library
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-animation-library
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify private task manifests and content hashes
+        shell: bash
+        run: |
+          set +e
+          python private-animation-library/scripts/verify_task_archive.py >"$RUNNER_TEMP/archive-check.log" 2>&1
+          result=$?
+          set -e
+          if [ "$result" -eq 0 ]; then
+            grep -E '^Verified [0-9]+ task revision manifest\(s\); all listed files match size and SHA-256\.$' "$RUNNER_TEMP/archive-check.log" || true
+          else
+            echo "PRIVATE_ARCHIVE_VALIDATION_FAILED"
+            echo "exit_code=$result"
+          fi
+          rm -f "$RUNNER_TEMP/archive-check.log"
+          exit "$result"
+
   live-jobs:
     if: github.event_name == 'schedule' && github.event.schedule == '43 */2 * * *' || inputs.group == 'all' || inputs.group == 'live'
     strategy:
