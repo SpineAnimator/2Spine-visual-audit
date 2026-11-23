@@ -9,6 +9,7 @@ on:
   schedule:
     - cron: '*/15 * * * *'
     - cron: '43 */2 * * *'
+    - cron: '23 3 * * 0'
   workflow_dispatch:
     inputs:
       group:
@@ -162,7 +163,7 @@ jobs:
           source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
 
   expensive-jobs:
-    if: inputs.group == 'all' || inputs.group == 'expensive'
+    if: inputs.group == 'all' || inputs.group == 'expensive' || (github.event_name == 'schedule' && github.event.schedule == '23 3 * * 0')
     strategy:
       fail-fast: false
       max-parallel: 2
