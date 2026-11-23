@@ -103,6 +103,11 @@ NODE
       ! -name 'psd-cloud-runtime.test.mjs' -print | sort)
     node --test --test-reporter=tap "${suite[@]}"
     ;;
+  python-psd-validation)
+    python -m pip install --disable-pip-version-check Pillow numpy psd-tools
+    python -m compileall -q python tools tests
+    python -m unittest discover -s tests -p 'test_*.py' -v
+    ;;
   pose-director)
     node --check engine/pose-director.js
     node --check engine/artistic-score.js
