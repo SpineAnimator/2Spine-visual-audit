@@ -11,6 +11,16 @@ on:
         description: Exact public runner commit containing this reusable workflow and its composite action
         required: true
         type: string
+      source_repository:
+        description: Optional source repository override for public self-tests; defaults to the private caller repository
+        required: false
+        type: string
+        default: ''
+      source_ref:
+        description: Optional source ref override for public self-tests; defaults to the private caller SHA
+        required: false
+        type: string
+        default: ''
       rust:
         description: Install the Rust WASM target toolchain
         required: false
@@ -43,6 +53,8 @@ on:
         default: false
     secrets:
       ACCESS_TOKEN:
+        required: false
+      SOURCE_REPO_TOKEN:
         required: false
   pull_request:
     paths:
@@ -97,9 +109,9 @@ jobs:
         uses: ./runner-tools/.github/actions/private-task
         with:
           task: ${{ inputs.task }}
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          source-token: ${{ github.token }}
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || github.sha }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN || github.token }}
           rust: ${{ inputs.rust }}
           python-version: ${{ inputs.python_version }}
           persist-credentials: 'false'
@@ -170,9 +182,9 @@ jobs:
         uses: ./runner-tools/.github/actions/private-task
         with:
           task: ${{ inputs.task }}
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          source-token: ${{ github.token }}
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || github.sha }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN || github.token }}
           rust: false
           persist-credentials: 'false'
 
@@ -197,9 +209,9 @@ jobs:
         uses: ./runner-tools/.github/actions/private-task
         with:
           task: psd-cache-autoheal
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          source-token: ${{ github.token }}
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || github.sha }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN || github.token }}
           rust: false
           persist-credentials: 'false'
       - name: Preserve private autoheal report
@@ -231,9 +243,9 @@ jobs:
         uses: ./runner-tools/.github/actions/private-task
         with:
           task: ${{ inputs.task }}
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          source-token: ${{ github.token }}
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || github.sha }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN || github.token }}
           rust: ${{ inputs.rust }}
           python-version: ${{ inputs.python_version }}
           persist-credentials: ${{ inputs.task == 'wasm-publish' }}
@@ -349,8 +361,8 @@ jobs:
         uses: ./runner-tools/.github/actions/private-task
         with:
           task: sa-asset-transport-live
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          source-token: ${{ github.token }}
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || github.sha }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN || github.token }}
           rust: false
           persist-credentials: 'false'
