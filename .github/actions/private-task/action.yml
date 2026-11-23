@@ -14,6 +14,10 @@ inputs:
     description: Whether the Rust WASM target toolchain is required
     required: false
     default: 'false'
+  python-version:
+    description: Python version for source validation task
+    required: false
+    default: '3.11'
 runs:
   using: composite
   steps:
@@ -47,7 +51,7 @@ runs:
         node-version: '22'
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: ${{ inputs.python-version }}
         cache: pip
     - name: Install locked private Node dependencies
       shell: bash
