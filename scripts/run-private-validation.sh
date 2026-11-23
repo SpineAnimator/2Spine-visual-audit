@@ -87,7 +87,13 @@ NODE
     ;;
   semantic-contour-validation)
     node --test tests/semantic-contour-renderer.test.cjs tests/reconstruction-qa.test.cjs tests/layer-budget-optimizer.test.cjs tests/semantic-anatomy-plan.test.cjs tests/sa-semantic-contour-adapter.test.cjs tests/scene-ir-animation-planner.test.cjs tests/vision-holes.test.cjs tests/studio-mcp-semantic-contour-patch.test.cjs
-    npm test -- --test-reporter=tap
+    # Keep the deterministic full suite separate from three production probes
+    # that have dedicated live jobs in this same public runner matrix.
+    mapfile -t suite < <(find tests -maxdepth 1 -type f \\( -name '*.test.cjs' -o -name '*.test.mjs' \\) \\
+      ! -name 'live-cloud.test.mjs' \\
+      ! -name 'live-drive-source.test.mjs' \\
+      ! -name 'psd-cloud-runtime.test.mjs' -print | sort)
+    node --test --test-reporter=tap "${suite[@]}"
     ;;
   pose-director)
     node --check engine/pose-director.js
