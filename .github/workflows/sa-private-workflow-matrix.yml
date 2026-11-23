@@ -20,7 +20,6 @@ on:
           - unit
           - live
           - expensive
-          - extended
 permissions:
   contents: read
 concurrency:
@@ -54,6 +53,14 @@ jobs:
             ref: main
             timeout: 20
             rust: true
+          - task: full-node-tests
+            ref: main
+            timeout: 35
+            rust: false
+          - task: asset-transport-unit
+            ref: main
+            timeout: 20
+            rust: false
     name: ${{ matrix.task }} • Ubuntu 24.04
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.timeout }}
@@ -130,35 +137,6 @@ jobs:
           - task: zombie-psd
             ref: main
             timeout: 10
-            rust: false
-    name: ${{ matrix.task }} • Ubuntu 24.04
-    runs-on: ubuntu-24.04
-    timeout-minutes: ${{ matrix.timeout }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/private-task
-        with:
-          task: ${{ matrix.task }}
-          ref: ${{ matrix.ref }}
-          rust: ${{ matrix.rust }}
-          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
-
-  extended-jobs:
-    if: inputs.group == 'all' || inputs.group == 'extended'
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        include:
-          - task: full-node-tests
-            ref: main
-            timeout: 25
-            rust: false
-          - task: asset-transport-unit
-            ref: main
-            timeout: 15
             rust: false
     name: ${{ matrix.task }} • Ubuntu 24.04
     runs-on: ubuntu-24.04
