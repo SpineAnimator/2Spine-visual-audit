@@ -33,6 +33,22 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
+  private-issues-audit:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Private issue/token audit • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/private-task
+        with:
+          task: issues-audit
+          ref: main
+          rust: false
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
   reviewer-contract:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     name: Catbox reviewer contract • public Ubuntu
@@ -104,6 +120,10 @@ jobs:
           - task: asset-transport-unit
             ref: main
             timeout: 20
+            rust: false
+          - task: issues-audit
+            ref: main
+            timeout: 5
             rust: false
           - task: asset-transport-feature-validation
             ref: feat/sa-core-vision-animation-planner
