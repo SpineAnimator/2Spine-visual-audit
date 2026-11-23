@@ -106,6 +106,10 @@ jobs:
             ref: main
             timeout: 5
             rust: false
+          - task: catbox-review-download
+            ref: feat/catbox-review-download-contract
+            timeout: 5
+            rust: false
           - task: cherry-mirror-audit
             ref: main
             timeout: 5
