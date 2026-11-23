@@ -61,6 +61,10 @@ jobs:
             ref: main
             timeout: 20
             rust: false
+          - task: semantic-contour-validation
+            ref: feat/sa-core-vision-animation-planner
+            timeout: 40
+            rust: false
     name: ${{ matrix.task }} • Ubuntu 24.04
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.timeout }}
