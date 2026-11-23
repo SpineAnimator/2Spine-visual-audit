@@ -19,6 +19,34 @@ case "$TASK" in
     # Public runner is contents:read only and deliberately receives no OIDC write permission.
     node tests/clgb71-recovery.mjs
     ;;
+  catbox-clgb71-recovery)
+    node tests/seed-known-source.mjs
+    node tests/clgb71-recovery.mjs
+    ;;
+  catbox-d4mmri-recovery)
+    node tests/seed-d4mmri-source.mjs
+    ;;
+  psd-cache-autoheal)
+    mkdir -p reports
+    PSD_AUTOHEAL_REPORT="${PSD_AUTOHEAL_REPORT:-reports/psd-cache-autoheal.json}" node tools/psd-cache-autoheal.mjs
+    node tests/live-mcp-source.mjs
+    ;;
+  wasm-publish)
+    cargo test --manifest-path rust/spine-core/Cargo.toml
+    cargo build --release --target wasm32-unknown-unknown --manifest-path rust/spine-core/Cargo.toml
+    cp rust/spine-core/target/wasm32-unknown-unknown/release/spine_core.wasm engine/spine_core.wasm
+    node --test tests/rust-core.test.cjs
+    git config user.name "github-actions[bot]"
+    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    git add engine/spine_core.wasm
+    if ! git diff --cached --quiet; then
+      git commit -m "build: publish 2Spine v1.4.0 Rust WASM core"
+      git push origin HEAD:main
+    fi
+    ;;
+  sa-asset-transport-live)
+    node tests/live-archive-upload.mjs
+    ;;
   cherry-mirror-audit)
     node tests/cherry-mirror-recovery.mjs
     ;;
