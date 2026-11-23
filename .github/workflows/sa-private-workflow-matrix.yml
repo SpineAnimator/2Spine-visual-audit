@@ -80,6 +80,11 @@ jobs:
             ref: main
             timeout: 5
             rust: false
+          - task: python-psd-validation
+            ref: main
+            timeout: 20
+            rust: false
+            python-version: '3.12'
           - task: runtime-contact
             ref: main
             timeout: 8
@@ -116,6 +121,7 @@ jobs:
           task: ${{ matrix.task }}
           ref: ${{ matrix.ref }}
           rust: ${{ matrix.rust }}
+          python-version: ${{ matrix.python-version || '3.11' }}
           source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
 
   archive-validation:
