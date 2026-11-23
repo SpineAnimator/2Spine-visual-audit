@@ -72,6 +72,7 @@ runs:
         SA_SOURCE_DIR: private-source
         GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
         SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
+        SA_SOURCE_TOKEN: ${{ inputs.source-token }}
       run: |
         set -euo pipefail
         private_log="$RUNNER_TEMP/sa-private-task.log"
