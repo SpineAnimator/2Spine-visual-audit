@@ -105,6 +105,11 @@ jobs:
             ref: main
             timeout: 60
             rust: false
+          - task: zombie-spine-e2e
+            group: expensive
+            ref: main
+            timeout: 25
+            rust: false
           - task: clgb71-ik-build
             group: expensive
             ref: main
