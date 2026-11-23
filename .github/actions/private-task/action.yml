@@ -73,25 +73,17 @@ runs:
         GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
         SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
       run: |
-        set +e
+        set -euo pipefail
         private_log="$RUNNER_TEMP/sa-private-task.log"
+        trap 'rm -f "$private_log"' EXIT
+        set +e
         bash scripts/run-private-validation.sh >"$private_log" 2>&1
         task_status=$?
         set -e
         echo "task=${{ inputs.task }}"
         echo "private_source_sha=${{ steps.private_revision.outputs.sha }}"
         echo "task_exit_code=$task_status"
-        # Public runner logs contain only numeric test summaries, never raw
-        # private-source test output, paths, fixture data, or exception payloads.
-        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests?$|^OK$|^FAILED|^PRIVATE_STAGE_[a-z0-9_]+_EXIT=[0-9]+
-        if [ "$task_status" -ne 0 ]; then
-          grep -E '^not ok [0-9]+ - ' "$private_log" | cut -c1-180 || true
-        fi
-        rm -f "$private_log"
-        exit "$task_status"
- "$private_log" || true
-        if [ "$task_status" -ne 0 ]; then
-          grep -E '^not ok [0-9]+ - ' "$private_log" | cut -c1-180 || true
-        fi
-        rm -f "$private_log"
+        # Emit only aggregate numeric summaries. Never print private test names,
+        # source paths, fixture data, stack traces, or exception payloads.
+        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests? in [0-9.]+s$|^OK$|^FAILED|^PRIVATE_STAGE_[a-z0-9_]+_EXIT=[0-9]+$' "$private_log" || true
         exit "$task_status"
