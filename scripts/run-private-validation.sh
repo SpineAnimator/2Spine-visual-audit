@@ -106,7 +106,7 @@ NODE
     node --test tests/psd-cache-autoheal.test.cjs
     ;;
   psd-cloud-smoke)
-    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14'
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14' 'scipy>=1.10,<2'
     python tools/extract_psd_rasters.py tests/fixtures/etalons/cherry/source.psd .test-output/psd-cloud/raster
     node tools/build_psd_scene.mjs .test-output/psd-cloud/raster .test-output/psd-cloud generic
     node tools/post_cloud_fixture.mjs .test-output/psd-cloud/cloud-request.json .test-output/psd-cloud/psd-cloud-spine.zip
@@ -137,7 +137,7 @@ NODE
     REQUIRE_RUST_MESH=1 node --test tests/rust-core.test.cjs
     ;;
   zombie-psd)
-    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14'
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14' 'scipy>=1.10,<2'
     python tools/verify_zombie_psd.py
     ;;
   volume360)
@@ -187,7 +187,7 @@ NODE
 NODE
     ;;
   zombie-spine-e2e)
-    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14'
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14' 'scipy>=1.10,<2'
     python -m unittest discover -s tests -p 'test_verify_zombie_psd.py'
     PSD_LAYER_MANIFEST=.test-output/zombie/original-layers.json python tools/verify_zombie_psd.py
     python tools/extract_psd_rasters.py /tmp/zombie-pistol.psd .test-output/zombie/cloud-raster
@@ -210,7 +210,7 @@ NODE
     PSD_CLOUD_SMOKE_DIR=.test-output/zombie SPINE_EXPECTED_CLIP=pistol_recoil node --test tests/psd-cloud-runtime.test.mjs
     ;;
   clgb71-ik-build)
-    python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3'
+    python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3' 'scipy>=1.10,<2'
     python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
     python -m unittest discover -s tests -p 'test_reconstruct_psd_rgb_appearance.py'
     PSD_FORCE_VERIFIED_CACHE=1 python tools/verify_zombie_psd.py
