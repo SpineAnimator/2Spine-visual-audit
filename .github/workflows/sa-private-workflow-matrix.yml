@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/sa-private-workflow-matrix.yml'
+      - '.github/actions/private-task/action.yml'
       - 'scripts/run-private-validation.sh'
   schedule:
     - cron: '43 4 * * *'
@@ -25,140 +26,38 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
-  migrated-job:
-    if: (github.event_name == 'push' && matrix.group == 'unit') || (github.event_name == 'schedule' && matrix.group == 'live') || inputs.group == 'all' || inputs.group == matrix.group
+  unit-jobs:
+    if: github.event_name == 'push' || github.event_name == 'schedule' && false || inputs.group == 'all' || inputs.group == 'unit'
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
         include:
-          - task: catbox-diagnostic
-            group: live
-            ref: main
-            timeout: 6
-            rust: false
-          - task: catbox-source-smoke
-            group: live
-            ref: main
-            timeout: 5
-            rust: false
-          - task: cherry-mirror-audit
-            group: live
-            ref: main
-            timeout: 5
-            rust: false
-          - task: cloud-smoke
-            group: live
-            ref: main
-            timeout: 8
-            rust: false
-          - task: drive-source-smoke
-            group: live
-            ref: main
-            timeout: 5
-            rust: false
-          - task: mcp-real-psd
-            group: live
-            ref: main
-            timeout: 15
-            rust: false
-          - task: mcp-source-smoke
-            group: live
-            ref: main
-            timeout: 6
-            rust: false
-          - task: mcp-zip-live
-            group: live
-            ref: main
-            timeout: 6
-            rust: false
-          - task: nf4g80-probe
-            group: live
-            ref: main
-            timeout: 6
-            rust: false
-          - task: psd-cloud-smoke
-            group: live
-            ref: main
-            timeout: 12
-            rust: false
-          - task: psd-route-audit
-            group: live
-            ref: main
-            timeout: 10
-            rust: false
-          - task: recover-zombie-source
-            group: live
-            ref: main
-            timeout: 6
-            rust: false
-          - task: storage-diagnostic
-            group: live
-            ref: main
-            timeout: 5
-            rust: false
-          - task: zombie-psd
-            group: live
-            ref: main
-            timeout: 10
-            rust: false
-          - task: browser-smoke
-            group: expensive
-            ref: main
-            timeout: 15
-            rust: false
-          - task: psd-1000
-            group: expensive
-            ref: main
-            timeout: 60
-            rust: false
-          - task: zombie-spine-e2e
-            group: expensive
-            ref: main
-            timeout: 25
-            rust: false
-          - task: clgb71-ik-build
-            group: expensive
-            ref: main
-            timeout: 25
-            rust: false
-          - task: volume360
-            group: expensive
-            ref: main
-            timeout: 20
-            rust: false
           - task: pose-director
-            group: unit
             ref: main
             timeout: 12
             rust: false
           - task: psd-cache-unit
-            group: unit
             ref: main
             timeout: 5
             rust: false
           - task: runtime-contact
-            group: unit
             ref: main
             timeout: 8
             rust: false
           - task: site-command
-            group: unit
             ref: main
             timeout: 12
             rust: false
           - task: rust-core
-            group: unit
             ref: main
             timeout: 20
             rust: true
           - task: full-node-tests
-            group: unit
             ref: main
             timeout: 25
             rust: false
           - task: asset-transport-unit
-            group: unit
             ref: main
             timeout: 15
             rust: false
@@ -166,42 +65,121 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.timeout }}
     steps:
-      - name: Prove public runner allocation
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "executor_repository=SpineAnimator/2Spine-visual-audit"
-          echo "runner_name=$RUNNER_NAME"
-          echo "runner_os=$RUNNER_OS"
-          echo "runner_arch=$RUNNER_ARCH"
-          uname -a
-      - name: Checkout private SA source
-        uses: actions/checkout@v4
+      - uses: ./.github/actions/private-task
         with:
-          repository: SpineAnimator/spine-animator-private
+          task: ${{ matrix.task }}
           ref: ${{ matrix.ref }}
-          token: ${{ secrets.SOURCE_REPO_TOKEN }}
-          path: private-source
-          persist-credentials: false
-      - uses: actions/setup-node@v4
+          rust: ${{ matrix.rust }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
+  live-jobs:
+    if: github.event_name == 'schedule' || inputs.group == 'all' || inputs.group == 'live'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - task: catbox-diagnostic
+            ref: main
+            timeout: 6
+            rust: false
+          - task: catbox-source-smoke
+            ref: main
+            timeout: 5
+            rust: false
+          - task: cherry-mirror-audit
+            ref: main
+            timeout: 5
+            rust: false
+          - task: cloud-smoke
+            ref: main
+            timeout: 8
+            rust: false
+          - task: drive-source-smoke
+            ref: main
+            timeout: 5
+            rust: false
+          - task: mcp-real-psd
+            ref: main
+            timeout: 15
+            rust: false
+          - task: mcp-source-smoke
+            ref: main
+            timeout: 6
+            rust: false
+          - task: mcp-zip-live
+            ref: main
+            timeout: 6
+            rust: false
+          - task: nf4g80-probe
+            ref: main
+            timeout: 6
+            rust: false
+          - task: psd-cloud-smoke
+            ref: main
+            timeout: 12
+            rust: false
+          - task: psd-route-audit
+            ref: main
+            timeout: 10
+            rust: false
+          - task: recover-zombie-source
+            ref: main
+            timeout: 6
+            rust: false
+          - task: storage-diagnostic
+            ref: main
+            timeout: 5
+            rust: false
+          - task: zombie-psd
+            ref: main
+            timeout: 10
+            rust: false
+    name: ${{ matrix.task }} • Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeout }}
+    steps:
+      - uses: ./.github/actions/private-task
         with:
-          node-version: '22'
-      - uses: actions/setup-python@v5
+          task: ${{ matrix.task }}
+          ref: ${{ matrix.ref }}
+          rust: ${{ matrix.rust }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
+  expensive-jobs:
+    if: inputs.group == 'all' || inputs.group == 'expensive'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - task: browser-smoke
+            ref: main
+            timeout: 15
+            rust: false
+          - task: psd-1000
+            ref: main
+            timeout: 60
+            rust: false
+          - task: zombie-spine-e2e
+            ref: main
+            timeout: 25
+            rust: false
+          - task: clgb71-ik-build
+            ref: main
+            timeout: 25
+            rust: false
+          - task: volume360
+            ref: main
+            timeout: 20
+            rust: false
+    name: ${{ matrix.task }} • Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeout }}
+    steps:
+      - uses: ./.github/actions/private-task
         with:
-          python-version: '3.11'
-          cache: pip
-      - name: Install locked private Node dependencies
-        working-directory: private-source
-        run: npm ci
-      - name: Set up Rust for WASM/core jobs
-        if: matrix.rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - name: Execute migrated private workflow task
-        shell: bash
-        env:
-          SA_TASK: ${{ matrix.task }}
-          SA_SOURCE_DIR: private-source
-          GITHUB_SHA: ${{ github.sha }}
-        run: bash scripts/run-private-validation.sh
+          task: ${{ matrix.task }}
+          ref: ${{ matrix.ref }}
+          rust: ${{ matrix.rust }}
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
