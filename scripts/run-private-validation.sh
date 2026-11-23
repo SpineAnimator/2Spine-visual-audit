@@ -237,7 +237,7 @@ NODE
     python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
     python -m unittest discover -s tests -p 'test_reconstruct_psd_rgb_appearance.py'
     PSD_FORCE_VERIFIED_CACHE=1 python tools/verify_zombie_psd.py
-    python tools/verify_zombie_psd.py
+    PSD_LAYER_MANIFEST=.test-output/clgb71-ik/original-layers.json python tools/verify_zombie_psd.py
     node --test tests/js-ik-pack.test.mjs
     node --test tests/real-clgb71-rig.test.cjs
     node --test tests/runtime-contact-evidence.test.mjs
