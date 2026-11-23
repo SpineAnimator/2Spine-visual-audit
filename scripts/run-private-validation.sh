@@ -33,7 +33,7 @@ case "$TASK" in
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
     if(!ready)throw Error('Production Pages did not publish '+version+' within readiness window');
-    NODE
+NODE
     node --test tests/live-cloud.test.mjs
     ;;
   drive-source-smoke)
@@ -83,7 +83,7 @@ case "$TASK" in
       }catch(error){console.log('NF4G80_PROBE',JSON.stringify({name,error:String(error.message||error).slice(0,200)}));}
       finally{clearTimeout(timer);}
     }
-    NODE
+NODE
     ;;
   pose-director)
     node --check engine/pose-director.js
@@ -180,7 +180,7 @@ case "$TASK" in
       console.log('BROWSER_DOWNLOAD_READY',ready);
       if(!ready)throw Error('Website failed to produce ZIP: '+result.slice(0,300));
     }finally{await browser.close()}
-    NODE
+NODE
     ;;
   clgb71-ik-build)
     python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3'
