@@ -41,7 +41,7 @@ NODE
     ;;
   mcp-real-psd)
     node tools/download_verified_catbox.mjs .verified-source
-    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14'
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.10,<2' 'Pillow>=10.3,<14' 'scipy>=1.10,<2'
     python tools/extract_psd_rasters.py .verified-source/clgb71.psd .test-output/mcp-real/raster
     node --test tests/js-psd-scene.test.mjs
     node tools/build_psd_scene.mjs .test-output/mcp-real/raster .test-output/mcp-real zombie_pistol
@@ -137,7 +137,7 @@ NODE
     python tools/verify_zombie_psd.py
     ;;
   volume360)
-    python -m pip install --disable-pip-version-check 'psd-tools>=1.9,<2' 'Pillow>=10'
+    python -m pip install --disable-pip-version-check 'psd-tools>=1.9,<2' 'Pillow>=10' 'scipy>=1.10,<2'
     python tools/passive_psd_rgba_for_360.py tests/fixtures/etalons/cherry/source.psd .test-output/volume360-input
     node tools/verify_real_psd_volume360.mjs .test-output/volume360-input .test-output/volume360-result
     unzip -t .test-output/volume360-result/real-psd-volume360-spine-4.3.26.zip
