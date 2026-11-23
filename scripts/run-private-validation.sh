@@ -87,7 +87,7 @@ NODE
     ;;
   semantic-contour-validation)
     node --test tests/semantic-contour-renderer.test.cjs tests/reconstruction-qa.test.cjs tests/layer-budget-optimizer.test.cjs tests/semantic-anatomy-plan.test.cjs tests/sa-semantic-contour-adapter.test.cjs tests/scene-ir-animation-planner.test.cjs tests/vision-holes.test.cjs tests/studio-mcp-semantic-contour-patch.test.cjs
-    npm test
+    npm test -- --test-reporter=tap
     ;;
   pose-director)
     node --check engine/pose-director.js
