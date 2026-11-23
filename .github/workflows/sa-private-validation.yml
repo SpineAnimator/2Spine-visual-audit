@@ -1,0 +1,106 @@
+name: SA private-source validation on public Ubuntu
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which private-source validation suite to run
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - semantic-contour
+          - generator
+          - native-psd
+  repository_dispatch:
+    types: [sa-private-validation]
+permissions:
+  contents: read
+concurrency:
+  group: sa-private-source-validation
+  cancel-in-progress: false
+jobs:
+  semantic-contour:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'semantic-contour'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout private SA feature branch
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: feat/sa-core-vision-animation-planner
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run semantic contour and reconstruction tests
+        run: |
+          node --test tests/semantic-contour-renderer.test.cjs tests/reconstruction-qa.test.cjs tests/layer-budget-optimizer.test.cjs tests/semantic-anatomy-plan.test.cjs tests/sa-semantic-contour-adapter.test.cjs tests/scene-ir-animation-planner.test.cjs tests/vision-holes.test.cjs tests/job-handoff.test.mjs tests/job-handoff-http.test.mjs tests/sa-agent.test.cjs
+          npm test
+  generator:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'generator'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout private SA main branch
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build cloud generator
+        run: npm run build:cloud-generator
+      - name: Run generator regression tests
+        run: |
+          node --test tests/scene-export.test.cjs tests/cloud-generator.test.cjs tests/art-direction.test.cjs tests/artistic-score.test.cjs
+          node --test tests/js-ik-pack.test.mjs tests/js-psd-scene.test.mjs tests/command.test.cjs tests/remote-planner.test.cjs
+  native-psd:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'native-psd'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout private SA main branch
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install PSD processing dependencies
+        run: |
+          python -m pip install --disable-pip-version-check 'Pillow>=10,<14' 'psd-tools>=1.27,<2'
+      - name: Validate exporter contract
+        run: node --test tests/v754-exporter.test.mjs
+      - name: Validate PSD hierarchy and raster packaging
+        run: |
+          python -m unittest discover -s tests -p test_psd_v754_tree.py -v
+          python -m unittest discover -s tests -p 'test_psd_spine_*.py' -v
+          python -m unittest discover -s tests -p test_native_psd_composite.py -v
+      - name: Assert source fidelity is not mislabeled as artistic approval
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('tools/native_psd_composite.py').read_text()
+          assert 'native_editor_frame_zero_approved' in s
+          assert 'independent_layer_recomposition_approved' in s
+          print('PASS: pixel fidelity only; artistic approval remains separate')
+          PY
