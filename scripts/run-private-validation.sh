@@ -11,6 +11,14 @@ case "$TASK" in
   catbox-source-smoke)
     node --test tests/live-catbox.test.mjs
     ;;
+  catbox-review-download)
+    node --check engine/chatgpt-review-adapter.js
+    node --test tests/chatgpt-review-adapter.test.cjs
+    ;;
+  clgb71-recovery-probe)
+    # Public runner is contents:read only and deliberately receives no OIDC write permission.
+    node tests/clgb71-recovery.mjs
+    ;;
   cherry-mirror-audit)
     node tests/cherry-mirror-recovery.mjs
     ;;
@@ -216,7 +224,7 @@ NODE
     PSD_CLOUD_SMOKE_DIR=.test-output/zombie SPINE_EXPECTED_CLIP=pistol_recoil node --test tests/psd-cloud-runtime.test.mjs
     ;;
   clgb71-ik-build)
-    python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3'
+    python -m pip install --disable-pip-version-check 'psd-tools[composite]>=1.10,<2' 'Pillow>=10.3,<14' 'numpy>=1.26,<3' 'scipy>=1.10,<2'
     python -m unittest discover -s tests -p 'test_psd_style_evidence.py'
     python -m unittest discover -s tests -p 'test_reconstruct_psd_rgb_appearance.py'
     PSD_FORCE_VERIFIED_CACHE=1 python tools/verify_zombie_psd.py
