@@ -1,0 +1,1 @@
+Trigger one isolated diagnostic run using sanitized stage exit codes only.
