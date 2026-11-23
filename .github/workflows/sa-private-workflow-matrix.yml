@@ -1,5 +1,10 @@
 name: Migrated private SA jobs on public Ubuntu
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/sa-private-workflow-matrix.yml'
+      - '.github/actions/private-task/action.yml'
+      - 'scripts/run-private-validation.sh'
   push:
     branches: [main]
     paths:
@@ -28,6 +33,38 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
+  reviewer-contract:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Catbox reviewer contract • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/private-task
+        with:
+          task: catbox-review-download
+          ref: feat/catbox-review-download-contract
+          rust: false
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
+  clgb71-recovery-probe:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: clgb71 recovery probe • read-only Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/private-task
+        with:
+          task: clgb71-recovery-probe
+          ref: main
+          rust: false
+          source-token: ${{ secrets.SOURCE_REPO_TOKEN }}
+
   unit-jobs:
     if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.group == 'all' || inputs.group == 'unit'
     strategy:
@@ -135,6 +172,14 @@ jobs:
           - task: catbox-source-smoke
             ref: main
             timeout: 5
+            rust: false
+          - task: catbox-review-download
+            ref: feat/catbox-review-download-contract
+            timeout: 10
+            rust: false
+          - task: clgb71-recovery-probe
+            ref: main
+            timeout: 8
             rust: false
           - task: cherry-mirror-audit
             ref: main
