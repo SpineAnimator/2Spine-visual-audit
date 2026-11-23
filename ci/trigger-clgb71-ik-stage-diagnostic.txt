@@ -1,1 +1,2 @@
 Trigger one isolated diagnostic run using sanitized stage exit codes only.
+Retry after repairing the local composite action manifest.
