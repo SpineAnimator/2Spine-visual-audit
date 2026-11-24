@@ -232,7 +232,7 @@ NODE
       console.log('BROWSER_VERSION='+String(await page.locator('.version').textContent()));
       await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
       console.log('BROWSER_UPLOAD_INPUT_READY=true');
-      await page.locator('#prompt').fill('Animate the cherry with a small bounce and return to the source pose');
+      await page.locator('#prompt').fill('Animate only the root position Y with a small bounce and return to the source pose. Keep every node opacity exactly 1.0; do not add opacity tracks, fades, transparency, or visibility changes. Preserve all source layers and artwork.');
       console.log('BROWSER_PROMPT_FILLED=true');
       await page.locator('#generate').click();
       console.log('BROWSER_GENERATE_CLICKED=true');
