@@ -184,7 +184,7 @@ NODE
     node --input-type=module <<'NODE'
     import { chromium } from 'playwright-core';
     import { existsSync } from 'node:fs';
-    const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(existsSync);
+    const chrome=[process.env.CHROME_PATH,'/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(p=>p&&existsSync(p));
     if(!chrome)throw Error('Headless Chrome is not available on runner');
     const browser=await chromium.launch({executablePath:chrome,args:['--no-sandbox'],headless:true});
     try{
