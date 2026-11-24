@@ -1,0 +1,59 @@
+# Reviewed exact-fingerprint suppressions for NVIDIA cdf-augmentation at
+# catalog commit d7e1e2c728579ad38174443ef22382d0fb4615b5.
+# Any changed/new finding remains active and fails the validation policy.
+version: 2
+scanner_version: 2.13.6
+rules: []
+fingerprints:
+- hash: sha256:b57d0d3bf1cb0e5ab412db6ba2719c873eb318b1ec9847120d5c5d7715be55f2
+  rule_id: RP1
+  file: SKILL.md
+  reason: 'Reviewed false positive: this is a multiline command prefix; the actual image argument is the required immutable CDF_IMAGE_ID.'
+- hash: sha256:5a7e4f24c4cba685f90d2a204173cdceada4c240c1cc3c1361634b804f950b9b
+  rule_id: RP1
+  file: evals/evals.json
+  reason: 'Reviewed false positive: evaluation prose mentions docker run but does not execute or specify an image.'
+- hash: sha256:3b560d2272a564b57b4524743ec08beb0826a82abcc08fdcb303edfa96b0aa58
+  rule_id: RP1
+  file: evals/evals.json
+  reason: 'Reviewed false positive: evaluation prose mentions docker run but does not execute or specify an image.'
+- hash: sha256:2da5b5b69e74bd71f1b8630af1d5a8fbc695fd3e25913391661cd5cdc783d431
+  rule_id: RP1
+  file: evals/evals.json
+  reason: 'Reviewed false positive: evaluation prose mentions docker run but does not execute or specify an image.'
+- hash: sha256:3148bdd4ae325a127be5e3ed01fe1b272f41f04013beb358aedc7c4c1c3e412c
+  rule_id: RP1
+  file: references/event-video-gen.md
+  reason: 'Reviewed false positive: multiline docker command requires CDF_IMAGE_ID and passes the immutable image ID, not a mutable tag.'
+- hash: sha256:10305f8a0df28bd8d6c24a55d20cadb9542a1f1415accff5e8b469e3e17c005a
+  rule_id: RP1
+  file: references/image-attribute-augmentation.md
+  reason: 'Reviewed false positive: multiline command prefix is followed by the pinned cdf-augmentation:1.2.0 image.'
+- hash: sha256:c2a22af9788acbfbb0f5fa0de64687dc95c03b41d4082089600b75288ff8183a
+  rule_id: RP1
+  file: references/troubleshooting.md
+  reason: 'Reviewed false positive: docker run -e is a generic environment-variable command prefix in troubleshooting prose, not an executable unpinned image.'
+- hash: sha256:4a0904bd76961678dab4a2e713033d5701f127ca71ea29d6672c17d31b1e7adf
+  rule_id: PE3
+  file: evals/evals.json
+  reason: 'Reviewed false positive: .env appears only in evaluation guidance warning against committing secrets; no credential file is read.'
+- hash: sha256:761964ca045e067bf500412b88b3950b6c6c460d459f8eca1ef6a99debd434b5
+  rule_id: TM3
+  file: references/event-video-gen.md
+  reason: 'Reviewed false positive: world-writable appears only in an explicit warning not to use world-writable permissions on shared systems.'
+- hash: sha256:64b60536e4229b3df8d39d1a39f17bde8f59dfda89a11e4c7835010c6471788b
+  rule_id: TM3
+  file: references/image-attribute-augmentation.md
+  reason: 'Reviewed false positive: text explicitly recommends restrictive ownership and warns against world-writable permissions.'
+- hash: sha256:2dc169a13eaf89321091616d8b50f4e509d3c3b4d412c1f7f064575b11d80cab
+  rule_id: TM3
+  file: references/image-attribute-augmentation.md
+  reason: 'Reviewed false positive: text explicitly recommends restrictive ownership and warns against world-writable permissions.'
+- hash: sha256:d2ce85ab62eab3cbef63446525fa7dc04cba6fd7da7633876ff58ec341cab321
+  rule_id: TM3
+  file: references/pipeline-operations.md
+  reason: 'Reviewed false positive: world-writable appears in a warning that explicitly prohibits it on shared and production systems.'
+- hash: sha256:27c1d53285b4e127c12500058abe3ea2e1fd5df56944d62bc544361bba586b70
+  rule_id: TM3
+  file: references/troubleshooting.md
+  reason: 'Reviewed false positive: the text recommends ACLs and explicitly says not to make data world-writable.'
