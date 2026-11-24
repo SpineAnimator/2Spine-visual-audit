@@ -42,7 +42,7 @@ jobs:
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 \
             private-sa/.github/workflows/clgb71-original-ik-zip.yml
 
-      - name: Assert dispatch is restricted and contains no private asset or license data
+      - name: Assert dispatch is restricted and payload contains only run metadata
         shell: bash
         run: |
           set -euo pipefail
@@ -51,8 +51,19 @@ jobs:
           grep -Fq "artifact_run_id: String(context.runId)" "$workflow"
           grep -Fq "expected_source_sha: context.sha" "$workflow"
           grep -Fq "event_type: 'sa-clgb71-editor'" "$workflow"
-          if grep -Eq 'SPINE_LICENSE|SPINE_LINUX_URL|\.psd|original-ik-spine-4\.3\.26\.zip' "$workflow" | tail -n 1; then
-            echo "::error::Private asset or license data must not be placed in the dispatch workflow payload"
-            exit 1
-          fi
-          echo "SA_3SPINE_DISPATCH_STATIC_CONTRACT_PASS"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const source = fs.readFileSync(process.env.WORKFLOW, 'utf8');
+          const match = source.match(/const payload = \{([\s\S]*?)\n\s*\};/);
+          if (!match) throw new Error('Dispatch payload block not found');
+          const payload = match[1];
+          if (/SPINE_LICENSE|SPINE_LINUX_URL|\.psd|\.zip/i.test(payload)) {
+            throw new Error('Dispatch payload contains a private asset or license reference');
+          }
+          for (const key of ['source_repo:', 'artifact_run_id:', 'expected_source_sha:']) {
+            if (!payload.includes(key)) throw new Error('Missing payload field: ' + key);
+          }
+          console.log('SA_3SPINE_DISPATCH_STATIC_CONTRACT_PASS');
+          NODE
+        env:
+          WORKFLOW: private-sa/.github/workflows/clgb71-original-ik-zip.yml
