@@ -33,6 +33,53 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
+  sa-dispatch-contract:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: SA → 3Spine dispatch contract • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact private SA integration branch
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: feat/dispatch-clgb71-to-3spine-editor-v2
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-sa
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+          cache: false
+      - name: Validate private workflow with actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 private-sa/.github/workflows/clgb71-original-ik-zip.yml
+      - name: Validate exact metadata-only dispatch payload
+        shell: bash
+        env:
+          WORKFLOW: private-sa/.github/workflows/clgb71-original-ik-zip.yml
+        run: |
+          set -euo pipefail
+          grep -Fq "github.ref == 'refs/heads/main'" "$WORKFLOW"
+          grep -Fq "artifact_run_id: String(context.runId)" "$WORKFLOW"
+          grep -Fq "expected_source_sha: context.sha" "$WORKFLOW"
+          grep -Fq "event_type: 'sa-clgb71-editor'" "$WORKFLOW"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const source = fs.readFileSync(process.env.WORKFLOW, 'utf8');
+          const match = source.match(/const payload = \{([\s\S]*?)\n\s*\};/);
+          if (!match) throw new Error('Dispatch payload block not found');
+          if (/SPINE_LICENSE|SPINE_LINUX_URL|\.psd|\.zip/i.test(match[1])) {
+            throw new Error('Dispatch payload contains a private asset or license reference');
+          }
+          for (const key of ['source_repo:', 'artifact_run_id:', 'expected_source_sha:']) {
+            if (!match[1].includes(key)) throw new Error('Missing payload field: ' + key);
+          }
+          console.log('SA_3SPINE_DISPATCH_STATIC_CONTRACT_PASS');
+          NODE
+
   reviewer-contract:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     name: Catbox reviewer contract • public Ubuntu
