@@ -125,7 +125,7 @@ jobs:
           test -s "$GITHUB_WORKSPACE/audit-repo/nvidia-skillspector-baselines/cdf-augmentation.yaml"
           skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/cdf-augmentation" \
             --no-llm \
-            --baseline "$GITHUB_WORKSPACE/nvidia-skillspector-baselines/cdf-augmentation.yaml" \
+            --baseline "$GITHUB_WORKSPACE/audit-repo/nvidia-skillspector-baselines/cdf-augmentation.yaml" \
             --show-suppressed \
             --format json \
             --output "$RUNNER_TEMP/cdf-augmentation-skillspector.json"
