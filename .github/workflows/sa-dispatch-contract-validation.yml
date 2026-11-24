@@ -1,0 +1,58 @@
+name: Validate private SA to licensed 3Spine dispatch workflow
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/sa-dispatch-contract-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint-private-sa-dispatch:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout public validation harness
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact private SA integration branch
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-animator-private
+          ref: feat/dispatch-clgb71-to-3spine-editor-v2
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-sa
+          persist-credentials: false
+
+      - name: Set up Go for pinned actionlint
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+          cache: false
+
+      - name: Validate private workflow syntax and GitHub Actions expressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 \
+            private-sa/.github/workflows/clgb71-original-ik-zip.yml
+
+      - name: Assert dispatch is restricted and contains no private asset or license data
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=private-sa/.github/workflows/clgb71-original-ik-zip.yml
+          grep -Fq "github.ref == 'refs/heads/main'" "$workflow"
+          grep -Fq "artifact_run_id: String(context.runId)" "$workflow"
+          grep -Fq "expected_source_sha: context.sha" "$workflow"
+          grep -Fq "event_type: 'sa-clgb71-editor'" "$workflow"
+          if grep -Eq 'SPINE_LICENSE|SPINE_LINUX_URL|\.psd|original-ik-spine-4\.3\.26\.zip' "$workflow" | tail -n 1; then
+            echo "::error::Private asset or license data must not be placed in the dispatch workflow payload"
+            exit 1
+          fi
+          echo "SA_3SPINE_DISPATCH_STATIC_CONTRACT_PASS"
