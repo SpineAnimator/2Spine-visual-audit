@@ -17,9 +17,6 @@ on:
         options: [all, test, linux, macos]
 permissions:
   contents: read
-concurrency:
-  group: 2spine-private-source-ci
-  cancel-in-progress: true
 jobs:
   python-tests:
     if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'test'
