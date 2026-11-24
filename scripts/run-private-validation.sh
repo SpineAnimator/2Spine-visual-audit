@@ -206,8 +206,9 @@ NODE
       page.on('pageerror',e=>messages.push('pageerror '+String(e.message).slice(0,200)));
       page.on('response',r=>{if(/api\/plan|api\/build|bundle\.js/.test(r.url()))messages.push('HTTP '+r.status()+' '+r.url().split('?')[0]);});
       await page.goto('https://spineanimator.github.io/?qa='+Date.now(),{waitUntil:'domcontentloaded',timeout:45000});
-      await page.waitForFunction(()=>Boolean(window.agPsd?.readPsd),null,{timeout:20000});
-      console.log('BROWSER_PSD_PARSER_READY',await page.evaluate(()=>Boolean(window.agPsd?.readPsd)));
+      console.log('BROWSER_PAGE_LOADED',await page.title());
+      await page.waitForFunction(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd),null,{timeout:20000});
+      console.log('BROWSER_PSD_PARSER_READY',await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd)));
       console.log('BROWSER_VERSION',await page.locator('.version').textContent());
       await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
       await page.locator('#prompt').fill('Animate the cherry with a small bounce and return to the source pose');
