@@ -308,10 +308,6 @@ jobs:
             ref: main
             timeout: 8
             rust: false
-          - task: cherry-mirror-audit
-            ref: main
-            timeout: 5
-            rust: false
           - task: cloud-smoke
             ref: main
             timeout: 8
