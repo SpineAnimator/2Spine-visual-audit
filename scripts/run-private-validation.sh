@@ -230,11 +230,11 @@ NODE
       }
       console.log('BROWSER_PSD_PARSER_READY='+String(await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd))));
       console.log('BROWSER_VERSION='+String(await page.locator('.version').textContent()));
-      await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
+      await page.locator('#file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
       console.log('BROWSER_UPLOAD_INPUT_READY=true');
       await page.locator('#prompt').fill('Animate the cherry with a small bounce and return to the source pose');
       console.log('BROWSER_PROMPT_FILLED=true');
-      await page.locator('#generate').click();
+      await page.locator('#create').click();
       console.log('BROWSER_GENERATE_CLICKED=true');
       try{
         await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:60000});
