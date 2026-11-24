@@ -80,6 +80,51 @@ jobs:
           console.log('SA_3SPINE_DISPATCH_STATIC_CONTRACT_PASS');
           NODE
 
+  sa-3spine-receiver-contract:
+    name: 3Spine licensed Editor receiver contract • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout public validation harness
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact 3Spine receiver branch
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: feat/sa-clgb71-artifact-dispatch
+          path: 3spine
+          persist-credentials: false
+      - name: Set up Go for pinned actionlint
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+          cache: false
+      - name: Validate receiver workflow syntax
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 3spine/.github/workflows/verify-clgb71-editor-linux.yml
+      - name: Validate exact dispatch trust boundary and Ubuntu runner contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=3spine/.github/workflows/verify-clgb71-editor-linux.yml
+          grep -Fq 'repository_dispatch:' "$workflow"
+          grep -Fq 'types: [sa-clgb71-editor]' "$workflow"
+          grep -Fq "github.event.sender.login == 'vladleopold'" "$workflow"
+          grep -Fq "github.event.client_payload.source_repo == 'SpineAnimator/spine-animator-private'" "$workflow"
+          grep -Fq 'github.event.client_payload.artifact_run_id' "$workflow"
+          grep -Fq 'github.event.client_payload.expected_source_sha' "$workflow"
+          grep -Fq 'runs-on: [self-hosted, linux, X64]' "$workflow"
+          grep -Fq '(.head_branch == "main")' "$workflow"
+          grep -Fq '(.event == "push" or .event == "workflow_dispatch")' "$workflow"
+          bash -n 3spine/setup/check_runner.sh 3spine/setup/up.sh
+          grep -Fq 'docker compose up -d runner' 3spine/setup/up.sh
+          grep -Fq 'bash "$DIR/setup/check_runner.sh"' 3spine/setup/up.sh
+          grep -Fq 'RUNNER_NAME="${RUNNER_NAME:-spine-linux-x64}"' 3spine/setup/check_runner.sh
+          grep -Fq 'index("self-hosted") != null' 3spine/setup/check_runner.sh
+          grep -Fq 'index("linux") != null' 3spine/setup/check_runner.sh
+          grep -Fq 'index("X64") != null' 3spine/setup/check_runner.sh
+          echo 'THREESPINE_RECEIVER_AND_RUNNER_CONTRACT_PASS'
   reviewer-contract:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     name: Catbox reviewer contract • public Ubuntu
