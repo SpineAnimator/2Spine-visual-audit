@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/nvidia-skillspector-public.yml"
+      - "nvidia-skillspector-baselines/**"
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
@@ -111,24 +112,20 @@ jobs:
       - name: Scan selected skills (static; completeness enforced by reviewed policy)
         shell: bash
         run: |
-          set -uo pipefail
-          failed=0
-          for skill in cdf-auto-labeling cdf-augmentation; do
-            if skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/$skill" \
-              --no-llm \
-              --format json \
-              --output "$RUNNER_TEMP/$skill-skillspector.json"; then
-              echo "SKILLSPECTOR_PASS=$skill"
-            else
-              rc=$?
-              echo "SKILLSPECTOR_FAIL=$skill exit=$rc"
-              failed=1
-            fi
-          done
-          test "$failed" -eq 0
+          set -euo pipefail
+          skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/cdf-auto-labeling" \
+            --no-llm \
+            --format json \
+            --output "$RUNNER_TEMP/cdf-auto-labeling-skillspector.json"
+          skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/cdf-augmentation" \
+            --no-llm \
+            --baseline nvidia-skillspector-baselines/cdf-augmentation.yaml \
+            --show-suppressed \
+            --format json \
+            --output "$RUNNER_TEMP/cdf-augmentation-skillspector.json"
           echo "NVIDIA_SKILLSPECTOR_SCAN_COMPLETE"
 
-      - name: Enforce reviewed SkillSpector completeness policy
+      - name: Enforce reviewed SkillSpector completeness and finding policy
         shell: bash
         run: |
           set -euo pipefail
@@ -147,25 +144,18 @@ jobs:
 
           auto = report("cdf-auto-labeling")
           completeness = auto.get("analysis_completeness") or {}
-          expected = {
+          expected_auto = {
               ("reference_missing", "SKILL.md", 41, False),
               ("referenced_uninspected", "SKILL.md", 43, False),
               ("reference_missing", "SKILL.md", 103, False),
               ("reference_missing", "SKILL.md", 111, False),
               ("reference_missing", "SKILL.md", 117, False),
           }
-          exceptions = completeness.get("ledger_exceptions") or []
-          actual = {
-              (
-                  item.get("reason_code"),
-                  item.get("path"),
-                  item.get("start_line"),
-                  item.get("fatal"),
-              )
-              for item in exceptions
+          actual_auto = {
+              (item.get("reason_code"), item.get("path"), item.get("start_line"), item.get("fatal"))
+              for item in (completeness.get("ledger_exceptions") or [])
           }
-
-          coverage_ok = (
+          auto_ok = (
               auto.get("execution_successful") is True
               and completeness.get("execution_successful") is True
               and completeness.get("total_components") == 48
@@ -177,55 +167,50 @@ jobs:
               and not auto.get("issues")
               and (auto.get("risk_assessment") or {}).get("score") == 0
               and (auto.get("risk_assessment") or {}).get("max_issue_severity") == "NONE"
+              and actual_auto == expected_auto
           )
-          if not coverage_ok:
-              raise SystemExit("cdf-auto-labeling failed the security/coverage policy")
-
-          if exceptions:
-              if actual != expected or len(exceptions) != len(expected):
-                  raise SystemExit(
-                      "cdf-auto-labeling has new or changed reference-resolution exceptions: "
-                      + json.dumps(exceptions, sort_keys=True)
-                  )
-              print(
-                  "ACCEPTED_EXACT_DOCUMENTATION_CAVEATS: five non-fatal SKILL.md references; "
-                  "all 48 components fully inspected and zero security findings"
-              )
-          elif completeness.get("is_complete") is not True:
-              raise SystemExit("cdf-auto-labeling is incomplete without an approved caveat set")
+          if not auto_ok:
+              raise SystemExit("cdf-auto-labeling failed the reviewed security/coverage policy")
+          print("CDF_AUTO_LABELING_POLICY_PASS: 48/48 components, zero findings, five exact non-fatal documentation caveats")
 
           augmentation = report("cdf-augmentation")
           aug = augmentation.get("analysis_completeness") or {}
-          if not (
+          expected_aug_lines = {55, 57, 59, 62, 63, 64, 71, 79, 81, 82, 85, 86, 277, 293, 296, 299, 321}
+          actual_aug = {
+              (item.get("reason_code"), item.get("path"), item.get("start_line"), item.get("fatal"))
+              for item in (aug.get("ledger_exceptions") or [])
+          }
+          expected_aug = {("reference_missing", "SKILL.md", line, False) for line in expected_aug_lines}
+          aug_risk = augmentation.get("risk_assessment") or {}
+          aug_ok = (
               augmentation.get("execution_successful") is True
               and aug.get("execution_successful") is True
               and aug.get("is_complete") is True
               and aug.get("coverage_percent") == 100.0
               and aug.get("partially_inspected_files") == 0
               and aug.get("entirely_uninspected_files") == 0
-          ):
-              raise SystemExit("cdf-augmentation analysis is incomplete")
-
-          print("SKILLSPECTOR_COMPLETENESS_POLICY_PASS")
+              and actual_aug == expected_aug
+              and not augmentation.get("issues")
+              and aug_risk.get("score") == 0
+              and aug_risk.get("max_issue_severity") == "NONE"
+          )
+          if not aug_ok:
+              raise SystemExit(
+                  "cdf-augmentation failed reviewed baseline/security policy: "
+                  + json.dumps({
+                      "active_issues": augmentation.get("issues"),
+                      "suppressed_count": augmentation.get("suppressed_count"),
+                      "exceptions": sorted(actual_aug),
+                      "risk": aug_risk,
+                  }, sort_keys=True)
+              )
+          print(
+              "CDF_AUGMENTATION_POLICY_PASS: 100% coverage, zero active findings, "
+              f"{augmentation.get('suppressed_count', 0)} exact reviewed false-positive occurrences suppressed, "
+              "17 exact non-fatal runtime-path caveats"
+          )
+          print("SKILLSPECTOR_COMPLETENESS_AND_FINDING_POLICY_PASS")
           PY
-
-      - name: Generate reviewed cdf-augmentation baseline candidate
-        if: always() && steps.install-skillspector.outcome == 'success'
-        shell: bash
-        run: |
-          set -euo pipefail
-          skillspector baseline "$RUNNER_TEMP/nvidia-skill-scan/cdf-augmentation" \
-            --no-llm \
-            --reason "Reviewed static false positives: .env appears only in guidance against committing secrets; docker run tokens are either multiline command prefixes followed by an immutable CDF_IMAGE_ID or evaluation prose; world-writable appears only in warnings prohibiting it. No executable credential access or unsafe defaults were found." \
-            --output "$RUNNER_TEMP/cdf-augmentation-baseline.yaml"
-
-      - name: Upload reviewable baseline candidate
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nvidia-skillspector-baseline-candidate
-          path: ${{ runner.temp }}/cdf-augmentation-baseline.yaml
-          if-no-files-found: warn
 
       - name: Upload SkillSpector reports
         if: always()
