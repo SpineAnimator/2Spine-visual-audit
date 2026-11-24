@@ -34,6 +34,7 @@ jobs:
           path: nvidia-skills
           sparse-checkout: |
             cookbooks
+            nv-agent-root-cert.pem
             skills/cdf-auto-labeling
             skills/cdf-augmentation
           sparse-checkout-cone-mode: true
@@ -51,6 +52,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install binary-only OMS verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: model-signing==1.1.1 certifi pyOpenSSL
+
+      - name: Verify NVIDIA OMS signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+          for skill in cdf-auto-labeling cdf-augmentation; do
+            skill_dir="nvidia-skills/skills/$skill"
+            test -s "$skill_dir/SKILL.md"
+            test -s "$skill_dir/skill.oms.sig"
+            model_signing verify certificate "$skill_dir" \
+              --signature "$skill_dir/skill.oms.sig" \
+              --certificate_chain nvidia-skills/nv-agent-root-cert.pem
+          done
 
       - name: Install pinned SkillSpector
         shell: bash
