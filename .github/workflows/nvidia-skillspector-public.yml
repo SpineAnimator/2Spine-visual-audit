@@ -100,6 +100,24 @@ jobs:
           test "$failed" -eq 0
           echo "NVIDIA_SKILLSPECTOR_SCAN_COMPLETE"
 
+      - name: Generate reviewed cdf-augmentation baseline candidate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          skillspector baseline nvidia-skills/skills/cdf-augmentation \
+            --no-llm \
+            --reason "Reviewed static false positives: .env appears only in guidance against committing secrets; docker run tokens are either multiline command prefixes followed by the pinned cdf-augmentation:1.2.0 image or evaluation prose; world-writable appears only in warnings prohibiting it. No executable credential access or unsafe defaults were found." \
+            --output "$RUNNER_TEMP/cdf-augmentation-baseline.yaml"
+
+      - name: Upload reviewable baseline candidate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvidia-skillspector-baseline-candidate
+          path: ${{ runner.temp }}/cdf-augmentation-baseline.yaml
+          if-no-files-found: warn
+
       - name: Upload SkillSpector reports
         if: always()
         uses: actions/upload-artifact@v4
