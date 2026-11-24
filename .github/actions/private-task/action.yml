@@ -93,5 +93,5 @@ runs:
         echo "task_exit_code=$task_status"
         # Emit only aggregate numeric summaries. Never print private test names,
         # source paths, fixture data, stack traces, or exception payloads.
-        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests? in [0-9.]+s$|^OK$|^FAILED|^PRIVATE_STAGE_[a-z0-9_]+_EXIT=[0-9]+$|^BROWSER_[A-Z0-9_]+=|^DRIVE_[A-Z0-9_]+=|^CLOUD_(PAGES|SOURCE)_VERSION=' "$private_log" || true
+        grep -E '^# (tests|pass|fail|skipped) [0-9]+$|^Ran [0-9]+ tests? in [0-9.]+s$|^OK$|^FAILED|^PRIVATE_STAGE_[a-z0-9_]+_EXIT=[0-9]+$|^#? ?BROWSER_[A-Z0-9_]+=|^#? ?DRIVE_[A-Z0-9_]+=|^#? ?CLOUD_(PAGES|SOURCE)_VERSION=' "$private_log" || true
         exit "$task_status"
