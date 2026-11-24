@@ -106,7 +106,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p nvidia-logs
-          python -m pip install --disable-pip-version-check ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
+          python -m pip install --disable-pip-version-check --prefix "$RUNNER_TEMP/skillspector-install" ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
+          test -x "$RUNNER_TEMP/skillspector-install/bin/skillspector"
+          echo "$RUNNER_TEMP/skillspector-install/bin" >> "$GITHUB_PATH"
 
       - name: Scan selected skills (static, fail closed on incomplete analysis)
         shell: bash
