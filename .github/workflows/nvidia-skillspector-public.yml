@@ -1,0 +1,88 @@
+name: NVIDIA SkillSpector public catalog scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nvidia-skillspector-public.yml"
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nvidia-skillspector-public
+  cancel-in-progress: true
+
+env:
+  NVIDIA_SKILLS_COMMIT: d7e1e2c728579ad38174443ef22382d0fb4615b5
+  SKILLSPECTOR_COMMIT: e2674da339b0bddc6e565d059c0577c6d9cd25da
+
+jobs:
+  scan:
+    name: Static SkillSpector scan of pinned NVIDIA skills
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact NVIDIA skill catalog revision
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA/skills
+          ref: ${{ env.NVIDIA_SKILLS_COMMIT }}
+          path: nvidia-skills
+          sparse-checkout: |
+            skills/cdf-auto-labeling
+            skills/cdf-augmentation
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+
+      - name: Checkout pinned NVIDIA SkillSpector
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA/SkillSpector
+          ref: ${{ env.SKILLSPECTOR_COMMIT }}
+          path: skillspector-src
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned SkillSpector
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p nvidia-logs
+          python -m pip install --disable-pip-version-check ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
+
+      - name: Scan selected skills (static, fail closed on incomplete analysis)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for skill in cdf-auto-labeling cdf-augmentation; do
+            skillspector scan "nvidia-skills/skills/$skill" \
+              --no-llm \
+              --fail-on-incomplete \
+              --format json \
+              --output "$RUNNER_TEMP/$skill-skillspector.json"
+          done
+          echo "NVIDIA_SKILLSPECTOR_SCAN_COMPLETE"
+
+      - name: Upload SkillSpector reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvidia-skillspector-reports
+          path: ${{ runner.temp }}/*-skillspector.json
+          if-no-files-found: warn
+
+      - name: Upload SkillSpector diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvidia-skillspector-diagnostics
+          path: nvidia-logs/
+          if-no-files-found: warn
