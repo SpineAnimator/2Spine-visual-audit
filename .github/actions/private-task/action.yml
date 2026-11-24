@@ -65,6 +65,13 @@ runs:
     - name: Validate public task dispatcher syntax
       shell: bash
       run: bash -n scripts/run-private-validation.sh
+    - name: Install Chrome for browser smoke
+      id: chrome
+      if: inputs.task == 'browser-smoke'
+      uses: browser-actions/setup-chrome@v2.2.0
+      with:
+        chrome-version: stable
+        install-dependencies: true
     - name: Execute migrated private workflow task
       shell: bash
       env:
@@ -72,6 +79,7 @@ runs:
         SA_SOURCE_DIR: private-source
         GITHUB_SHA: ${{ steps.private_revision.outputs.sha }}
         SA_PRIVATE_SHA: ${{ steps.private_revision.outputs.sha }}
+        CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
       run: |
         set -euo pipefail
         private_log="$RUNNER_TEMP/sa-private-task.log"
