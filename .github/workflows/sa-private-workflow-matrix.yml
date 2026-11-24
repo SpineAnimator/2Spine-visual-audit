@@ -33,6 +33,39 @@ concurrency:
   group: sa-migrated-private-jobs
   cancel-in-progress: false
 jobs:
+  three-spine-receiver-contract:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: 3Spine Ubuntu receiver and runner bootstrap contract • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact 3Spine receiver branch
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: c0dfc6a3071d7924b918d960dc87bd32e4e9f346
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-3spine
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+          cache: false
+      - name: Validate licensed Ubuntu receiver workflow with actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 private-3spine/.github/workflows/verify-clgb71-editor-linux.yml
+      - name: Validate runner bootstrap shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n private-3spine/setup/up.sh private-3spine/setup/check_runner.sh
+          grep -Fq 'bash "$DIR/setup/check_runner.sh"' private-3spine/setup/up.sh
+          grep -Fq 'RUNNER_NAME:-spine-linux-x64' private-3spine/setup/check_runner.sh
+          grep -Fq 'THREESPINE_RUNNER_ONLINE' private-3spine/setup/check_runner.sh
+          echo "THREESPINE_RECEIVER_AND_RUNNER_BOOTSTRAP_STATIC_PASS"
+
   sa-dispatch-contract:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     name: SA → 3Spine dispatch contract • public Ubuntu
