@@ -45,7 +45,7 @@ jobs:
           test -s Spine-Mask-Tool/core.js
           test -s Spine-Mask-Tool/linux-api.js
           git ls-files --error-unmatch .nojekyll README.md index.html app.js Spine-Mask-Tool/index.html Spine-Mask-Tool/app.js Spine-Mask-Tool/core.js Spine-Mask-Tool/linux-api.js >/dev/null
-          unexpected="$(git ls-files | grep -Ev '^(\.nojekyll|README\.md|index\.html|app\.js|\.github/workflows/(verify-3spine-generation|verify-cloudflare-fallback|verify-mask-linux-api|verify-mask-mobile-runtime)\.yml|Spine-Mask-Tool/(AGENTS\.md|AI_AGENT_MOBILE_CLIPPING\.md|API\.md|index\.html|app\.js|core\.js|linux-api\.js|tools/(mobile-spine-runtime-audit|test-linux-api)\.mjs))$' || true)"
+          unexpected="$(git ls-files | grep -Ev '^(\.nojekyll|README\.md|index\.html|app\.js|\.github/workflows/(verify-3spine-generation|verify-cloudflare-fallback|verify-mask-linux-api|verify-mask-mobile-runtime|verify-manual-multi-mask)\.yml|Spine-Mask-Tool/(AGENTS\.md|AI_AGENT_MOBILE_CLIPPING\.md|API\.md|index\.html|app\.js|core\.js|linux-api\.js|tools/(mobile-spine-runtime-audit|test-linux-api|manual-multi-browser-e2e|weighted-clipping-runtime-e2e)\.mjs))$' || true)"
           test -z "$unexpected" || { printf 'Unexpected source files:\n%s\n' "$unexpected"; exit 1; }
           node --check app.js
           node --input-type=module --check < Spine-Mask-Tool/core.js
