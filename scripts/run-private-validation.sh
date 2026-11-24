@@ -231,14 +231,25 @@ NODE
       console.log('BROWSER_PSD_PARSER_READY='+String(await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd))));
       console.log('BROWSER_VERSION='+String(await page.locator('.version').textContent()));
       await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
+      console.log('BROWSER_UPLOAD_INPUT_READY=true');
       await page.locator('#prompt').fill('Animate the cherry with a small bounce and return to the source pose');
+      console.log('BROWSER_PROMPT_FILLED=true');
       await page.locator('#generate').click();
-      await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:60000});
+      console.log('BROWSER_GENERATE_CLICKED=true');
+      try{
+        await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:60000});
+      }catch(error){
+        console.log('BROWSER_GENERATION_WAIT_FAILED=1');
+        console.log('BROWSER_STATUS_TEXT='+String(await page.locator('#status').textContent().catch(()=>'' )).slice(0,500));
+        console.log('BROWSER_DOWNLOAD_VISIBLE='+String(await page.locator('#download').evaluate(el=>!el.hidden&&!!el.href).catch(()=>false)));
+        console.log('BROWSER_NETWORK_EVENTS='+JSON.stringify(messages.slice(-20)));
+        throw error;
+      }
       const result=await page.locator('#status').textContent();
       console.log('BROWSER_GENERATION_STATUS='+result.slice(0,900));
       console.log('BROWSER_NETWORK_EVENTS='+JSON.stringify(messages.slice(-20)));
       const ready=await page.locator('#download').evaluate(el=>!el.hidden&&!!el.href);
-      console.log('BROWSER_DOWNLOAD_READY',ready);
+      console.log('BROWSER_DOWNLOAD_READY='+String(ready));
       if(!ready)throw Error('Website failed to produce ZIP: '+result.slice(0,300));
     }finally{await browser.close()}
 NODE
