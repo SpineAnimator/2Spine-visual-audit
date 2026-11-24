@@ -1,0 +1,62 @@
+name: 3Spine private unit tests on public Ubuntu
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-private-unit-ci.yml'
+  schedule:
+    - cron: '47 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout private 3Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-3spine
+          persist-credentials: false
+      - name: Record exact private source revision
+        working-directory: private-3spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse HEAD)"
+          echo "3SPINE_PRIVATE_SOURCE_SHA=$source_sha"
+          echo "3SPINE_PRIVATE_SOURCE_SHA=$source_sha" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install visual audit dependency
+        working-directory: private-3spine
+        run: python -m pip install --disable-pip-version-check 'Pillow>=10.3,<14'
+      - name: Run source-safe visual and evidence unit suites
+        working-directory: private-3spine
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/3spine-unit"
+          failures=0
+          for suite in \
+            test_audit_clgb71_spine_render.py \
+            test_selected_rgb_native_evidence.py \
+            test_create_native_frame_manifest.py \
+            test_audit_volume360_visual.py \
+            test_audit_volume360_review.py; do
+            log="$RUNNER_TEMP/3spine-unit/$suite.log"
+            set +e
+            python -m unittest discover -s tests -p "$suite" >"$log" 2>&1
+            result=$?
+            set -e
+            summary="$(grep -E 'Ran [0-9]+ tests?|^OK$|^FAILED ' "$log" | tail -n 2 | tr '\n' ' ' || true)"
+            echo "3SPINE_UNIT_SUITE file=$suite exit=$result summary=${summary:-no-summary}"
+            if [ "$result" -ne 0 ]; then failures=$((failures+1)); fi
+          done
+          echo "3SPINE_UNIT_FAILURES=$failures"
+          if [ "$failures" -ne 0 ]; then exit 1; fi
