@@ -36,6 +36,13 @@ jobs:
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: private-2spine
           persist-credentials: false
+      - name: Record exact private source revision
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse HEAD)"
+          echo "2SPINE_PRIVATE_SOURCE_SHA=$source_sha" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
