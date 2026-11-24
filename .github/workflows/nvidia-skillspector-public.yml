@@ -53,6 +53,37 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Stage NVIDIA skills with immutable image overlay and referenced cookbooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/nvidia-skill-scan"
+          mkdir -p "$stage/cdf-auto-labeling" "$stage/cdf-augmentation/cookbooks/video_data_augmentation/configs" "$stage/cdf-augmentation/cookbooks/warehouse_safety/configs"
+          cp -R nvidia-skills/skills/cdf-auto-labeling/. "$stage/cdf-auto-labeling/"
+          cp -R nvidia-skills/skills/cdf-augmentation/. "$stage/cdf-augmentation/"
+          cp nvidia-skills/cookbooks/video_data_augmentation/configs/pipeline_video.yaml "$stage/cdf-augmentation/cookbooks/video_data_augmentation/configs/"
+          cp nvidia-skills/cookbooks/warehouse_safety/configs/pipeline.yaml "$stage/cdf-augmentation/cookbooks/warehouse_safety/configs/"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "nvidia-skill-scan/cdf-augmentation/references/event-video-gen.md"
+          text = p.read_text()
+          old = "  cdf-augmentation:latest"
+          if text.count(old) != 1:
+              raise SystemExit("Expected exactly one mutable cdf-augmentation:latest launch reference")
+          text = text.replace(old, '  "$CDF_IMAGE_ID"')
+          marker = "docker run --rm -it \\\n"
+          if text.count(marker) != 1:
+              raise SystemExit("Expected exactly one event-video-gen docker launch block")
+          text = text.replace(
+              marker,
+              ': "${CDF_IMAGE_ID:?Set this to the verified immutable sha256 image ID from the canonical build workflow}"\n' + marker,
+              1,
+          )
+          p.write_text(text)
+          print("IMMUTABLE_CDF_IMAGE_OVERLAY_APPLIED")
+          PY
+
       - name: Install binary-only OMS verifier
         shell: bash
         run: |
@@ -85,7 +116,7 @@ jobs:
           set -uo pipefail
           failed=0
           for skill in cdf-auto-labeling cdf-augmentation; do
-            if skillspector scan "nvidia-skills/skills/$skill" \
+            if skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/$skill" \
               --no-llm \
               --fail-on-incomplete \
               --format json \
@@ -105,9 +136,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          skillspector baseline nvidia-skills/skills/cdf-augmentation \
+          skillspector baseline "$RUNNER_TEMP/nvidia-skill-scan/cdf-augmentation" \
             --no-llm \
-            --reason "Reviewed static false positives: .env appears only in guidance against committing secrets; docker run tokens are either multiline command prefixes followed by the pinned cdf-augmentation:1.2.0 image or evaluation prose; world-writable appears only in warnings prohibiting it. No executable credential access or unsafe defaults were found." \
+            --reason "Reviewed static false positives: .env appears only in guidance against committing secrets; docker run tokens are either multiline command prefixes followed by an immutable CDF_IMAGE_ID or evaluation prose; world-writable appears only in warnings prohibiting it. No executable credential access or unsafe defaults were found." \
             --output "$RUNNER_TEMP/cdf-augmentation-baseline.yaml"
 
       - name: Upload reviewable baseline candidate
