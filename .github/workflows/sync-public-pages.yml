@@ -1,0 +1,87 @@
+name: Sync approved SpineAnimator frontend to Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-public-pages.yml'
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout approved public source
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-web-source
+          ref: main
+          path: source
+          persist-credentials: false
+      - name: Checkout public Pages target with scoped deployment token
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/SpineAnimator.github.io
+          ref: main
+          path: target
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          persist-credentials: true
+      - name: Verify Node.js and exact public source allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
+          cd source
+          test -f .nojekyll
+          test -s README.md
+          test -s index.html
+          test -s app.js
+          test -s Spine-Mask-Tool/index.html
+          test -s Spine-Mask-Tool/app.js
+          test -s Spine-Mask-Tool/core.js
+          test -s Spine-Mask-Tool/linux-api.js
+          git ls-files --error-unmatch .nojekyll README.md index.html app.js Spine-Mask-Tool/index.html Spine-Mask-Tool/app.js Spine-Mask-Tool/core.js Spine-Mask-Tool/linux-api.js >/dev/null
+          unexpected="$(git ls-files | grep -Ev '^(\.nojekyll|README\.md|index\.html|app\.js|\.github/workflows/(verify-3spine-generation|verify-cloudflare-fallback|verify-mask-linux-api|verify-mask-mobile-runtime)\.yml|Spine-Mask-Tool/(AGENTS\.md|AI_AGENT_MOBILE_CLIPPING\.md|API\.md|index\.html|app\.js|core\.js|linux-api\.js|tools/(mobile-spine-runtime-audit|test-linux-api)\.mjs))$' || true)"
+          test -z "$unexpected" || { printf 'Unexpected source files:\n%s\n' "$unexpected"; exit 1; }
+          node --check app.js
+          node --input-type=module --check < Spine-Mask-Tool/core.js
+          node --input-type=module --check < Spine-Mask-Tool/app.js
+          node --input-type=module --check < Spine-Mask-Tool/linux-api.js
+          grep -Fq 'linux-api.js' Spine-Mask-Tool/app.js
+          if grep -nEi 'github_pat_|ghp_[A-Za-z0-9]{20}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|ACCESS_TOKEN|SPINE_LICENSE_KEY|CLOUDFLARE_API_TOKEN' index.html app.js Spine-Mask-Tool/index.html Spine-Mask-Tool/app.js Spine-Mask-Tool/core.js Spine-Mask-Tool/linux-api.js; then
+            echo "::error::Possible credentials in public frontend"
+            exit 1
+          fi
+          echo "PUBLIC_FRONTEND_SOURCE_ALLOWLIST_PASS"
+      - name: Sync approved frontend only
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git -C source rev-parse HEAD)"
+          cd target
+          cp ../source/index.html index.html
+          cp ../source/app.js app.js
+          cp ../source/README.md README.md
+          cp ../source/.nojekyll .nojekyll
+          mkdir -p Spine-Mask-Tool
+          cp ../source/Spine-Mask-Tool/{index.html,app.js,core.js,linux-api.js} Spine-Mask-Tool/
+          git config user.name 'Spine web release bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .nojekyll README.md index.html app.js Spine-Mask-Tool/index.html Spine-Mask-Tool/app.js Spine-Mask-Tool/core.js Spine-Mask-Tool/linux-api.js
+          if ! git diff --cached --quiet; then
+            git commit -m "web: sync approved source $source_sha" >/dev/null
+            git push --quiet origin HEAD:main
+            echo "PAGES_CONTENT_UPDATED"
+          else
+            echo "PAGES_ALREADY_MATCH_SOURCE"
+          fi
+          cmp index.html ../source/index.html
+          cmp app.js ../source/app.js
+          cmp Spine-Mask-Tool/index.html ../source/Spine-Mask-Tool/index.html
+          cmp Spine-Mask-Tool/app.js ../source/Spine-Mask-Tool/app.js
+          cmp Spine-Mask-Tool/core.js ../source/Spine-Mask-Tool/core.js
+          cmp Spine-Mask-Tool/linux-api.js ../source/Spine-Mask-Tool/linux-api.js
