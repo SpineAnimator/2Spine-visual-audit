@@ -206,28 +206,37 @@ NODE
       page.on('pageerror',e=>messages.push('pageerror '+String(e.message).slice(0,200)));
       page.on('requestfailed',r=>{if(/ag-psd|app\.js|api\/plan|api\/build/.test(r.url()))messages.push('REQUEST_FAILED '+r.url().split('?')[0]+' '+String(r.failure()?.errorText||'').slice(0,100));});
       page.on('response',r=>{if(/ag-psd|app\.js|api\/plan|api\/build|bundle\.js/.test(r.url()))messages.push('HTTP '+r.status()+' '+r.url().split('?')[0]);});
-      const response=await page.goto('https://spineanimator.github.io/?qa='+Date.now(),{waitUntil:'commit',timeout:45000});
-      console.log('BROWSER_PAGE_HTTP_STATUS',response?.status()||0);
-      console.log('BROWSER_PAGE_LOADED',await page.title());
+      let response=null;
+      for(let attempt=1;attempt<=2&&!response;attempt++){
+        try{
+          response=await page.goto('https://spineanimator.github.io/?qa='+Date.now(),{waitUntil:'commit',timeout:30000});
+        }catch(error){
+          console.log('BROWSER_NAVIGATION_ATTEMPT_'+attempt+'_ERROR='+String(error?.message||error).replace(/[^a-z0-9 _.:/-]/gi,' ').slice(0,180));
+          if(attempt===2){console.log('BROWSER_NETWORK_EVENTS='+JSON.stringify(messages.slice(-20)));throw error;}
+          await new Promise(resolve=>setTimeout(resolve,1500));
+        }
+      }
+      console.log('BROWSER_PAGE_HTTP_STATUS='+(response?.status()||0));
+      console.log('BROWSER_PAGE_TITLE='+String(await page.title()).slice(0,100));
       try{await page.waitForLoadState('domcontentloaded',{timeout:15000});}
       catch{console.log('BROWSER_DOMCONTENTLOADED_TIMEOUT=1');}
       try{
         await page.waitForFunction(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd),null,{timeout:20000});
       }catch(error){
         console.log('BROWSER_PARSER_WAIT_FAILED=1');
-        console.log('BROWSER_PSD_GLOBALS',JSON.stringify(await page.evaluate(()=>({agPsd:Boolean(window.agPsd?.readPsd),hyphenated:Boolean(window['ag-psd']?.readPsd)}))));
-        console.log('BROWSER_NETWORK_EVENTS',JSON.stringify(messages.slice(-20)));
+        console.log('BROWSER_PSD_GLOBALS='+JSON.stringify(await page.evaluate(()=>({agPsd:Boolean(window.agPsd?.readPsd),hyphenated:Boolean(window['ag-psd']?.readPsd)}))));
+        console.log('BROWSER_NETWORK_EVENTS='+JSON.stringify(messages.slice(-20)));
         throw error;
       }
-      console.log('BROWSER_PSD_PARSER_READY',await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd)));
-      console.log('BROWSER_VERSION',await page.locator('.version').textContent());
+      console.log('BROWSER_PSD_PARSER_READY='+String(await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd))));
+      console.log('BROWSER_VERSION='+String(await page.locator('.version').textContent()));
       await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
       await page.locator('#prompt').fill('Animate the cherry with a small bounce and return to the source pose');
       await page.locator('#generate').click();
       await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:60000});
       const result=await page.locator('#status').textContent();
-      console.log('BROWSER_GENERATION_STATUS',result.slice(0,900));
-      console.log('BROWSER_NETWORK_EVENTS',JSON.stringify(messages.slice(-20)));
+      console.log('BROWSER_GENERATION_STATUS='+result.slice(0,900));
+      console.log('BROWSER_NETWORK_EVENTS='+JSON.stringify(messages.slice(-20)));
       const ready=await page.locator('#download').evaluate(el=>!el.hidden&&!!el.href);
       console.log('BROWSER_DOWNLOAD_READY',ready);
       if(!ready)throw Error('Website failed to produce ZIP: '+result.slice(0,300));
