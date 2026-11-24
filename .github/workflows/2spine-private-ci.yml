@@ -50,6 +50,20 @@ jobs:
             tail -n 30 "$RUNNER_TEMP/2spine-pip-install.log"
             exit 1
           fi
+      - name: Verify Python annotation compatibility and converter imports
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q source tests
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "source/tools")
+          import spine_binary_to_spine
+          import cross_folder_resolver
+          import restore_names_cli
+          print("2SPINE_PYTHON_IMPORT_COMPATIBILITY_PASS")
+          PY
       - name: Run tests and emit aggregate-only diagnostics
         working-directory: private-2spine
         shell: bash
