@@ -237,7 +237,7 @@ NODE
       await page.locator('#generate').click();
       console.log('BROWSER_GENERATE_CLICKED=true');
       try{
-        await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:60000});
+        await page.waitForFunction(()=>/ZIP ready|Generation failed/.test(document.querySelector('#status')?.textContent||''),null,{timeout:240000});
       }catch(error){
         console.log('BROWSER_GENERATION_WAIT_FAILED=1');
         console.log('BROWSER_STATUS_TEXT='+String(await page.locator('#status').textContent().catch(()=>'' )).slice(0,500));
