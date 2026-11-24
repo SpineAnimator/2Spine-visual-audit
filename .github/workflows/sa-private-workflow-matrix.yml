@@ -34,7 +34,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   sa-dispatch-contract:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: SA → 3Spine dispatch contract • public Ubuntu
     runs-on: ubuntu-24.04
     timeout-minutes: 10
