@@ -33,7 +33,6 @@ jobs:
           ref: ${{ env.NVIDIA_SKILLS_COMMIT }}
           path: nvidia-skills
           sparse-checkout: |
-            cookbooks
             nv-agent-root-cert.pem
             skills/cdf-auto-labeling
             skills/cdf-augmentation
@@ -58,11 +57,9 @@ jobs:
         run: |
           set -euo pipefail
           stage="$RUNNER_TEMP/nvidia-skill-scan"
-          mkdir -p "$stage/cdf-auto-labeling" "$stage/cdf-augmentation/cookbooks/video_data_augmentation/configs" "$stage/cdf-augmentation/cookbooks/warehouse_safety/configs"
+          mkdir -p "$stage/cdf-auto-labeling" "$stage/cdf-augmentation"
           cp -R nvidia-skills/skills/cdf-auto-labeling/. "$stage/cdf-auto-labeling/"
           cp -R nvidia-skills/skills/cdf-augmentation/. "$stage/cdf-augmentation/"
-          cp nvidia-skills/cookbooks/video_data_augmentation/configs/pipeline_video.yaml "$stage/cdf-augmentation/cookbooks/video_data_augmentation/configs/"
-          cp nvidia-skills/cookbooks/warehouse_safety/configs/pipeline.yaml "$stage/cdf-augmentation/cookbooks/warehouse_safety/configs/"
           python - <<'PY'
           import os
           from pathlib import Path
@@ -104,6 +101,7 @@ jobs:
           done
 
       - name: Install pinned SkillSpector
+        id: install-skillspector
         shell: bash
         run: |
           set -euo pipefail
@@ -132,7 +130,7 @@ jobs:
           echo "NVIDIA_SKILLSPECTOR_SCAN_COMPLETE"
 
       - name: Generate reviewed cdf-augmentation baseline candidate
-        if: always()
+        if: always() && steps.install-skillspector.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
