@@ -111,6 +111,37 @@ jobs:
             echo "2SPINE_PYTEST_EXIT python=${{ matrix.python-version }} code=$result"
             exit "$result"
           fi
+  clgb71-audit-unit-tests:
+    name: CLGB71 audit unit tests • private 3Spine-core / public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout private 3Spine-core source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-3spine-core
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Record exact private 3Spine-core revision
+        working-directory: private-3spine-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse HEAD)"
+          echo "3SPINE_CORE_SOURCE_SHA=$source_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install visual audit test dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow>=10.3,<14'
+      - name: Test CLGB71 rendered-frame audit
+        working-directory: private-3spine-core
+        run: python -m unittest discover -s tests -p 'test_audit_clgb71_spine_render.py'
+      - name: Test selected licensed-RGB evidence validation
+        working-directory: private-3spine-core
+        run: python -m unittest discover -s tests -p 'test_selected_rgb_native_evidence.py'
   linux-converter:
     if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'linux'
     name: Linux converter • private source / public Ubuntu
