@@ -108,7 +108,7 @@ jobs:
           mkdir -p nvidia-logs
           python -m pip install --disable-pip-version-check ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
 
-      - name: Scan selected skills (static, fail closed on incomplete analysis)
+      - name: Scan selected skills (static; completeness enforced by reviewed policy)
         shell: bash
         run: |
           set -uo pipefail
