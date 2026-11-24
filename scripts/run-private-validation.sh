@@ -26,21 +26,32 @@ case "$TASK" in
     node --input-type=module <<'NODE'
     import fs from 'node:fs';
     const current=fs.readFileSync('index.html','utf8');
-    const version=/class="version">([^<]+)/.exec(current)?.[1];
-    if(!version)throw Error('Website version marker is missing');
+    const sourceMatch=/class="version">v\.(\d+)\.(\d+)\.(\d+)</.exec(current);
+    if(!sourceMatch)throw Error('Private source website version marker is missing');
+    const sourceVersion=sourceMatch.slice(1).map(Number);
+    const compare=(a,b)=>{for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]-b[i];}return 0;};
+    console.log('CLOUD_SOURCE_VERSION=v.'+sourceVersion.join('.'));
     let ready=false;
     for(let attempt=1;attempt<=30;attempt++){
       try{
         const url='https://spineanimator.github.io/?release='+process.env.GITHUB_SHA+'-'+attempt;
         const response=await fetch(url,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(10000)});
-        if(response.ok&&(await response.text()).includes('class="version">'+version+'</span>')){
-          console.log('Production Pages published '+version+' on attempt '+attempt);
-          ready=true;break;
+        if(response.ok){
+          const html=await response.text();
+          const targetMatch=/class="version">v\.(\d+)\.(\d+)\.(\d+)</.exec(html);
+          if(targetMatch){
+            const targetVersion=targetMatch.slice(1).map(Number);
+            console.log('CLOUD_PAGES_VERSION=v.'+targetVersion.join('.'));
+            if(compare(targetVersion,sourceVersion)>=0){
+              console.log('Production Pages is current or newer than private source on attempt '+attempt);
+              ready=true;break;
+            }
+          }
         }
       }catch(error){console.log('Pages pending: '+String(error.message).slice(0,150));}
       await new Promise(resolve=>setTimeout(resolve,5000));
     }
-    if(!ready)throw Error('Production Pages did not publish '+version+' within readiness window');
+    if(!ready)throw Error('Production Pages is older than private source or did not publish within readiness window');
 NODE
     node --test tests/live-cloud.test.mjs
     ;;
@@ -180,12 +191,14 @@ NODE
     npm run bench:sa-vision
     ;;
   browser-smoke)
-    npm install --no-save --ignore-scripts playwright-core@1.58.2
+    npm install --no-save --ignore-scripts playwright@1.58.2
+    npx playwright install --with-deps chromium
+    export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
     node --input-type=module <<'NODE'
     import { chromium } from 'playwright-core';
     import { existsSync } from 'node:fs';
     const chrome=[process.env.CHROME_PATH,'/usr/bin/google-chrome','/usr/bin/chromium','/opt/google/chrome/chrome'].find(p=>p&&existsSync(p));
-    if(!chrome)throw Error('Headless Chrome is not available on runner');
+    if(!chrome)throw Error('Headless Chrome is not available on runner after Playwright install');
     const browser=await chromium.launch({executablePath:chrome,args:['--no-sandbox'],headless:true});
     try{
       const page=await browser.newPage({viewport:{width:1280,height:900}});
