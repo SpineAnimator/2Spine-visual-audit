@@ -6,6 +6,11 @@ on:
     paths:
       - ".github/workflows/nvidia-skillspector-public.yml"
       - "nvidia-skillspector-baselines/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nvidia-skillspector-public.yml"
+      - "nvidia-skillspector-baselines/**"
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
@@ -112,7 +117,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p nvidia-logs
-          python -m pip install --disable-pip-version-check ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
+          python -m venv "$RUNNER_TEMP/skillspector-venv"
+          "$RUNNER_TEMP/skillspector-venv/bin/python" -m pip install --disable-pip-version-check ./skillspector-src 2>&1 | tee nvidia-logs/skillspector-install.log
+          test -x "$RUNNER_TEMP/skillspector-venv/bin/skillspector"
+          "$RUNNER_TEMP/skillspector-venv/bin/skillspector" --help >/dev/null
+          echo "$RUNNER_TEMP/skillspector-venv/bin" >> "$GITHUB_PATH"
 
       - name: Scan selected skills (static; completeness enforced by reviewed policy)
         shell: bash
