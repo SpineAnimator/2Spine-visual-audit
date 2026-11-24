@@ -47,8 +47,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check --upgrade pip >/dev/null 2>&1
-          if ! python -m pip install --disable-pip-version-check -r requirements.txt pytest pyinstaller >/dev/null 2>&1; then
+          if ! python -m pip install --disable-pip-version-check -r requirements.txt pytest pyinstaller >"$RUNNER_TEMP/2spine-pip-install.log" 2>&1; then
             echo "2SPINE_DEPENDENCY_INSTALL_FAILED python=${{ matrix.python-version }}"
+            tail -n 30 "$RUNNER_TEMP/2spine-pip-install.log"
             exit 1
           fi
       - name: Run tests and emit aggregate-only diagnostics
@@ -134,8 +135,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check --upgrade pip >/dev/null 2>&1
-          if ! python -m pip install --disable-pip-version-check -r requirements.txt pyinstaller >/dev/null 2>&1; then
+          if ! python -m pip install --disable-pip-version-check -r requirements.txt pyinstaller >"$RUNNER_TEMP/2spine-macos-pip-install.log" 2>&1; then
             echo "2SPINE_MACOS_DEPENDENCY_INSTALL_FAILED"
+            tail -n 30 "$RUNNER_TEMP/2spine-macos-pip-install.log"
             exit 1
           fi
       - name: Build and verify macOS app without publishing private artifacts
