@@ -33,6 +33,7 @@ jobs:
           ref: ${{ env.NVIDIA_SKILLS_COMMIT }}
           path: nvidia-skills
           sparse-checkout: |
+            cookbooks
             skills/cdf-auto-labeling
             skills/cdf-augmentation
           sparse-checkout-cone-mode: true
@@ -61,14 +62,22 @@ jobs:
       - name: Scan selected skills (static, fail closed on incomplete analysis)
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
           for skill in cdf-auto-labeling cdf-augmentation; do
-            skillspector scan "nvidia-skills/skills/$skill" \
+            if skillspector scan "nvidia-skills/skills/$skill" \
               --no-llm \
               --fail-on-incomplete \
               --format json \
-              --output "$RUNNER_TEMP/$skill-skillspector.json"
+              --output "$RUNNER_TEMP/$skill-skillspector.json"; then
+              echo "SKILLSPECTOR_PASS=$skill"
+            else
+              rc=$?
+              echo "SKILLSPECTOR_FAIL=$skill exit=$rc"
+              failed=1
+            fi
           done
+          test "$failed" -eq 0
           echo "NVIDIA_SKILLSPECTOR_SCAN_COMPLETE"
 
       - name: Upload SkillSpector reports
