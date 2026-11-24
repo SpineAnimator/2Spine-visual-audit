@@ -55,7 +55,7 @@ jobs:
           go-version: "1.24.0"
           cache: false
       - name: Validate private workflow with actionlint
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 private-sa/.github/workflows/clgb71-original-ik-zip.yml
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -config-file .github/actionlint.yaml private-sa/.github/workflows/clgb71-original-ik-zip.yml
       - name: Validate exact metadata-only dispatch payload
         shell: bash
         env:
