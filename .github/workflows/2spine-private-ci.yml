@@ -5,7 +5,8 @@ on:
     paths:
       - '.github/workflows/2spine-private-ci.yml'
   schedule:
-    - cron: '11 */12 * * *'
+    - cron: '17 * * * *'
+    - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       suite:
@@ -18,7 +19,7 @@ permissions:
   contents: read
 concurrency:
   group: 2spine-private-source-ci
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   python-tests:
     if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'test'
@@ -120,7 +121,7 @@ jobs:
           test -x build_tool/build_linux/SpineSkeletonDataConverter
           echo "2SPINE_LINUX_CONVERTER_BUILD_PASS"
   macos-app:
-    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'macos'
+    if: github.event_name == 'push' || (github.event_name == 'schedule' && github.event.schedule == '0 3 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.suite == 'all' || inputs.suite == 'macos'))
     name: macOS app bundle • private source / public macOS
     runs-on: macos-latest
     timeout-minutes: 30
