@@ -1,0 +1,153 @@
+name: 2Spine private-source CI on public runners
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/2spine-private-ci.yml'
+  schedule:
+    - cron: '11 */12 * * *'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Validation suite
+        required: true
+        default: all
+        type: choice
+        options: [all, test, linux, macos]
+permissions:
+  contents: read
+concurrency:
+  group: 2spine-private-source-ci
+  cancel-in-progress: false
+jobs:
+  python-tests:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'test'
+    name: Python tests (${{ matrix.python-version }}) • private source / public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    steps:
+      - name: Checkout private 2Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/2Spine
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-2spine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: false
+      - name: Install private project dependencies
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --upgrade pip >/dev/null 2>&1
+          if ! python -m pip install --disable-pip-version-check -r requirements.txt pytest pyinstaller >/dev/null 2>&1; then
+            echo "2SPINE_DEPENDENCY_INSTALL_FAILED python=${{ matrix.python-version }}"
+            exit 1
+          fi
+      - name: Run tests and emit aggregate-only diagnostics
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -uo pipefail
+          report="$RUNNER_TEMP/2spine-junit.xml"
+          set +e
+          pytest -q --tb=no --junitxml="$report" >"$RUNNER_TEMP/2spine-pytest.log" 2>&1
+          result=$?
+          set -e
+          python - "$report" "${{ matrix.python-version }}" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          path, version = sys.argv[1:]
+          try:
+              root = ET.parse(path).getroot()
+              suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
+              total = sum(int(x.get("tests", 0)) for x in suites)
+              failures = sum(int(x.get("failures", 0)) for x in suites)
+              errors = sum(int(x.get("errors", 0)) for x in suites)
+              skipped = sum(int(x.get("skipped", 0)) for x in suites)
+              print(f"2SPINE_PYTEST_SUMMARY python={version} tests={total} failures={failures} errors={errors} skipped={skipped}")
+          except Exception:
+              print(f"2SPINE_PYTEST_REPORT_MISSING python={version}")
+          PY
+          if [ "$result" -ne 0 ]; then
+            echo "2SPINE_PYTEST_EXIT python=${{ matrix.python-version }} code=$result"
+            exit "$result"
+          fi
+  linux-converter:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'linux'
+    name: Linux converter • private source / public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout private 2Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/2Spine
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-2spine
+          persist-credentials: false
+      - name: Checkout pinned converter source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/SpineSkeletonDataConverter
+          ref: 64796e00e6a84f597cf87cb116a1069eb80a5126
+          path: build_tool
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Build Linux converter
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cmake build-essential >/dev/null
+          cmake -S build_tool -B build_tool/build_linux -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_tool/build_linux --parallel --target SpineSkeletonDataConverter
+          test -x build_tool/build_linux/SpineSkeletonDataConverter
+          echo "2SPINE_LINUX_CONVERTER_BUILD_PASS"
+  macos-app:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all' || inputs.suite == 'macos'
+    name: macOS app bundle • private source / public macOS
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout private 2Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/2Spine
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-2spine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: false
+      - name: Install private project dependencies
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --upgrade pip >/dev/null 2>&1
+          if ! python -m pip install --disable-pip-version-check -r requirements.txt pyinstaller >/dev/null 2>&1; then
+            echo "2SPINE_MACOS_DEPENDENCY_INSTALL_FAILED"
+            exit 1
+          fi
+      - name: Build and verify macOS app without publishing private artifacts
+        working-directory: private-2spine
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! pyinstaller --clean --noconfirm "source/Spine Project Packager.spec" >"$RUNNER_TEMP/2spine-pyinstaller.log" 2>&1; then
+            echo "2SPINE_MACOS_APP_BUILD_FAILED"
+            exit 1
+          fi
+          test -d "dist/2Spine.app"
+          echo "2SPINE_MACOS_APP_BUILD_PASS"
