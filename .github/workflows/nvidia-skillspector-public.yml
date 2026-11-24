@@ -27,6 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Checkout audit policy and reviewed baselines
+        uses: actions/checkout@v4
+        with:
+          path: audit-repo
+
       - name: Checkout exact NVIDIA skill catalog revision
         uses: actions/checkout@v4
         with:
@@ -117,7 +122,7 @@ jobs:
             --no-llm \
             --format json \
             --output "$RUNNER_TEMP/cdf-auto-labeling-skillspector.json"
-          test -s "$GITHUB_WORKSPACE/nvidia-skillspector-baselines/cdf-augmentation.yaml"
+          test -s "$GITHUB_WORKSPACE/audit-repo/nvidia-skillspector-baselines/cdf-augmentation.yaml"
           skillspector scan "$RUNNER_TEMP/nvidia-skill-scan/cdf-augmentation" \
             --no-llm \
             --baseline "$GITHUB_WORKSPACE/nvidia-skillspector-baselines/cdf-augmentation.yaml" \
