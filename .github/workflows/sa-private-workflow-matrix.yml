@@ -282,7 +282,7 @@ jobs:
           echo "PRIVATE_TASK_MANIFESTS_VERIFIED=$verified"
 
   live-jobs:
-    if: github.event_name == 'schedule' && github.event.schedule == '43 */2 * * *' || inputs.group == 'all' || inputs.group == 'live'
+    if: github.event_name == 'push' || (github.event_name == 'schedule' && github.event.schedule == '43 */2 * * *') || inputs.group == 'all' || inputs.group == 'live'
     strategy:
       fail-fast: false
       max-parallel: 4
