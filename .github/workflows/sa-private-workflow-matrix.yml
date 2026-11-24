@@ -94,6 +94,7 @@ jobs:
         with:
           repository: vladleopold/3Spine-core
           ref: feat/sa-clgb71-artifact-dispatch
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: 3spine
           persist-credentials: false
       - name: Set up Go for pinned actionlint
