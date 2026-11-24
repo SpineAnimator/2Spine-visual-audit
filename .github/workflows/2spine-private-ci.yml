@@ -99,9 +99,11 @@ jobs:
                           message = (item.get("message") or "").splitlines()[0][:240]
                           details = (item.text or "").strip().splitlines()
                           cause = next((line.strip() for line in reversed(details) if ":" in line), "")
+                          origin = next((line.strip() for line in details if line.strip().startswith("File ")), "")
                           message = re.sub(r"/(?:home|Users|tmp)/[^ ]+", "<path>", message)
                           cause = re.sub(r"/(?:home|Users|tmp)/[^ ]+", "<path>", cause)[:240]
-                          print(f"2SPINE_TEST_DIAGNOSTIC python={version} type={item.tag} message={message} cause={cause}")
+                          origin = re.sub(r"/(?:home|Users|tmp)/[^ ]+", "<path>", origin)[:240]
+                          print(f"2SPINE_TEST_DIAGNOSTIC python={version} type={item.tag} origin={origin} cause={cause}")
           except Exception:
               print(f"2SPINE_PYTEST_REPORT_MISSING python={version}")
           PY
