@@ -73,6 +73,13 @@ jobs:
               errors = sum(int(x.get("errors", 0)) for x in suites)
               skipped = sum(int(x.get("skipped", 0)) for x in suites)
               print(f"2SPINE_PYTEST_SUMMARY python={version} tests={total} failures={failures} errors={errors} skipped={skipped}")
+              import re
+              for case in root.iter("testcase"):
+                  for item in case:
+                      if item.tag in ("error", "failure"):
+                          message = (item.get("message") or "").splitlines()[0][:240]
+                          message = re.sub(r"/(?:home|Users|tmp)/[^ ]+", "<path>", message)
+                          print(f"2SPINE_TEST_DIAGNOSTIC python={version} type={item.tag} message={message}")
           except Exception:
               print(f"2SPINE_PYTEST_REPORT_MISSING python={version}")
           PY
