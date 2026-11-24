@@ -93,7 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: vladleopold/3Spine-core
-          ref: feat/sa-clgb71-artifact-dispatch # Track the live receiver PR until it is merged.
+          ref: feat/sa-clgb71-artifact-dispatch # Track the live receiver PR until it is merged; actionlint also checks shell scripts.
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: 3spine
           persist-credentials: false
