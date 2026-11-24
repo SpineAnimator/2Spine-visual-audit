@@ -204,10 +204,21 @@ NODE
       const page=await browser.newPage({viewport:{width:1280,height:900}});
       const messages=[];
       page.on('pageerror',e=>messages.push('pageerror '+String(e.message).slice(0,200)));
-      page.on('response',r=>{if(/api\/plan|api\/build|bundle\.js/.test(r.url()))messages.push('HTTP '+r.status()+' '+r.url().split('?')[0]);});
-      await page.goto('https://spineanimator.github.io/?qa='+Date.now(),{waitUntil:'domcontentloaded',timeout:45000});
+      page.on('requestfailed',r=>{if(/ag-psd|app\.js|api\/plan|api\/build/.test(r.url()))messages.push('REQUEST_FAILED '+r.url().split('?')[0]+' '+String(r.failure()?.errorText||'').slice(0,100));});
+      page.on('response',r=>{if(/ag-psd|app\.js|api\/plan|api\/build|bundle\.js/.test(r.url()))messages.push('HTTP '+r.status()+' '+r.url().split('?')[0]);});
+      const response=await page.goto('https://spineanimator.github.io/?qa='+Date.now(),{waitUntil:'commit',timeout:45000});
+      console.log('BROWSER_PAGE_HTTP_STATUS',response?.status()||0);
       console.log('BROWSER_PAGE_LOADED',await page.title());
-      await page.waitForFunction(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd),null,{timeout:20000});
+      try{await page.waitForLoadState('domcontentloaded',{timeout:15000});}
+      catch{console.log('BROWSER_DOMCONTENTLOADED_TIMEOUT=1');}
+      try{
+        await page.waitForFunction(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd),null,{timeout:20000});
+      }catch(error){
+        console.log('BROWSER_PARSER_WAIT_FAILED=1');
+        console.log('BROWSER_PSD_GLOBALS',JSON.stringify(await page.evaluate(()=>({agPsd:Boolean(window.agPsd?.readPsd),hyphenated:Boolean(window['ag-psd']?.readPsd)}))));
+        console.log('BROWSER_NETWORK_EVENTS',JSON.stringify(messages.slice(-20)));
+        throw error;
+      }
       console.log('BROWSER_PSD_PARSER_READY',await page.evaluate(()=>Boolean(window.agPsd?.readPsd || window['ag-psd']?.readPsd)));
       console.log('BROWSER_VERSION',await page.locator('.version').textContent());
       await page.locator('#source-file').setInputFiles('tests/fixtures/etalons/cherry/source.psd');
