@@ -214,7 +214,7 @@ jobs:
   spine-link-full-cloud-e2e:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all')
     name: Spine-Link full cloud E2E • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@aeb651688303e2225648cc610aaefa04263de05c
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@9427757cae89b09efe570e13d6a2a46ec0d24702
     secrets: inherit
 
   spine-link-computer-health:
@@ -250,7 +250,7 @@ jobs:
   clgb71-render-audit:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all')
     name: CLGB71 native evidence audit • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@423133bad6b022ce97ef12bcdd5440184759d2c0
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@1d867ff7e5c31885a03b32298e0bb618f85267ef
     with:
       source_run_id: ${{ inputs.source_run_id }}
     secrets: inherit
