@@ -38,7 +38,7 @@ PUBLIC_WORKFLOWS = {
     ),
     ".github/workflows/3spine-saver-selftest-public.yml": (
         ".github/workflows/3spine-saver-selftest.yml",
-        "a441d43bf2dd090c676bc1dfa715c97f2092b38b",
+        "cad2e7b138548e3cc9b25088e8084108e7296fc9",
     ),
 }
 
