@@ -173,6 +173,7 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("if: steps.gateway.outputs.ready == 'true'", source)
         self.assertIn("if: false # Private native Editor proof", source)
         self.assertIn("GH_REPO: vladleopold/3Spine-core", source)
+        self.assertIn("SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS", source)
 
     def test_missing_editor_secrets_wait_without_failing_public_queue_worker(self):
         start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
