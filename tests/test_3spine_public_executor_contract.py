@@ -105,6 +105,17 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("Run standalone Spine Mask native import and save/reopen/export fixture", self.source)
         self.assertIn("if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'", self.source)
 
+    def test_queued_native_work_fails_loudly_when_editor_secrets_are_missing(self):
+        self.assertIn("Fail queued native work when licensed Editor secrets are missing", self.source)
+        self.assertIn(
+            "if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'",
+            self.source,
+        )
+        self.assertIn(
+            "SPINE_MASK_NATIVE_QUEUED_WORK_BLOCKED_MISSING_EDITOR_SECRETS",
+            self.source,
+        )
+
     def test_native_geometry_regression_runs_on_public_ubuntu(self):
         self.assertIn("repository: SpineAnimator/spine-web-source", self.source)
         self.assertIn("path: 3spine/mask-public", self.source)

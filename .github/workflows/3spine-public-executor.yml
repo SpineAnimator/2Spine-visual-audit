@@ -240,6 +240,14 @@ jobs:
             echo "SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS" >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::Add SPINE_LICENSE and SPINE_LINUX_URL to the Actions secrets of SpineAnimator/2Spine-visual-audit."
           fi
+      - name: Fail queued native work when licensed Editor secrets are missing
+        if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'SPINE_MASK_NATIVE_QUEUED_WORK_BLOCKED_MISSING_EDITOR_SECRETS' >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::A Spine Mask job is queued, but SPINE_LICENSE and SPINE_LINUX_URL are not configured in SpineAnimator/2Spine-visual-audit."
+          exit 1
       - name: Install Spine 4.3.26 and headless OpenGL dependencies
         if: steps.editor.outputs.ready == 'true'
         shell: bash
