@@ -57,12 +57,21 @@ class PublicExecutorContractTests(unittest.TestCase):
             "verify-clgb71-editor-linux.yml",
             "verify-volume360-editor-linux.yml",
             "verify-user-spine-project.yml",
+            "verify-cherry-pr123-editor.yml",
+            "verify-cherry-pr131-hidden-hemisphere.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_cherry360_native_editor_jobs_are_delegated_to_public_psd_runner(self):
+        self.assertIn("cherry360-pr123-public-editor:", self.source)
+        self.assertIn("cherry360-pr131-public-editor:", self.source)
+        self.assertIn("cherry360-pr123-licensed-editor.yml@", self.source)
+        self.assertIn("cherry360-pr131-licensed-editor.yml@", self.source)
+        self.assertIn("SpineAnimator/sa-psd-tool-runner", self.source)
 
     def test_user_spine_project_validation_is_called_from_public_executor(self):
         self.assertIn("user-spine-project-public-validation:", self.source)
