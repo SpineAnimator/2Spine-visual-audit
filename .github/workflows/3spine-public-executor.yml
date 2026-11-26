@@ -125,11 +125,23 @@ jobs:
           if [ -n "${{ github.event.client_payload.source_sha || '' }}" ]; then
             test "$(git rev-parse HEAD)" = "${{ github.event.client_payload.source_sha }}"
           fi
+      - name: Checkout public Spine Mask Tool core for native geometry regression
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-web-source
+          ref: main
+          path: 3spine/mask-public
+          persist-credentials: false
       - name: Validate gateway authentication, chunk hashes and compatibility
         shell: bash
         run: |
           set -euo pipefail
           node --test tests/spine-mask-v2-gateway.test.mjs
+      - name: Run multi-component native geometry and clipping regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/spine-mask-native.mjs
       - name: Validate complete Spine ZIP, image paths and ZipSlip protection
         shell: bash
         run: |
@@ -187,7 +199,6 @@ jobs:
         run: python scripts/spine_mask_v2_ci.py --probe
       - name: Check licensed Editor availability without exposing credentials
         id: editor
-        if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -210,10 +221,14 @@ jobs:
           mkdir -p "$RUNNER_TEMP/spine"
           gzip -dc "$RUNNER_TEMP/spine-linux.gz" | tar -xf - -C "$RUNNER_TEMP/spine"
           SPINE_CLI="$RUNNER_TEMP/spine/Spine/Spine.sh"
+          if [ ! -x "$SPINE_CLI" ]; then SPINE_CLI="$RUNNER_TEMP/spine/Spine.sh"; fi
           test -x "$SPINE_CLI"
           echo "SPINE_CLI=$SPINE_CLI" >> "$GITHUB_ENV"
-      - name: Import, verify, export and return complete project ZIP
+      - name: Run standalone Spine Mask native import and save/reopen/export fixture
         if: steps.editor.outputs.ready == 'true'
+        run: python scripts/verify_spine_mask_tool_editor.py "$SPINE_CLI" "$RUNNER_TEMP/spine-mask-tool-editor-proof"
+      - name: Import, verify, export and return complete project ZIP
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
         env:
           JOB_ID: ${{ steps.next.outputs.id || steps.selftest_next.outputs.id }}
         shell: bash
@@ -233,14 +248,14 @@ jobs:
         if: steps.selftest_next.outputs.found == 'true' && steps.editor.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'
         run: python scripts/spine_mask_v2_ci.py --read-selftest
       - name: Install Chromium for live site E2E
-        if: steps.editor.outputs.ready == 'true'
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
         run: |
           set -euo pipefail
           npm install --prefix "$RUNNER_TEMP/mask-browser" --no-audit --no-fund --silent playwright@1.56.1
           "$RUNNER_TEMP/mask-browser/node_modules/.bin/playwright" install chromium
           echo "CHROME_PATH=" >> "$GITHUB_ENV"
       - name: Live website Make all through gateway and licensed Ubuntu Editor
-        if: steps.editor.outputs.ready == 'true'
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
         run: |
           set -euo pipefail
           node scripts/spine-mask-browser-e2e.mjs
@@ -253,6 +268,16 @@ jobs:
             timeout 180 xvfb-run -a "$SPINE_CLI" -l >/dev/null 2>&1 || true
           fi
           rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
+      - name: Upload native Editor proof and queue receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spine-mask-public-ubuntu-native-proof
+          path: |
+            ${{ runner.temp }}/spine-mask-tool-editor-proof
+            ${{ runner.temp }}/spine-mask-v2-receipt.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   public-secret-capability:
     name: Check public executor secret availability without exposing values
