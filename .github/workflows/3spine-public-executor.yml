@@ -51,6 +51,23 @@ jobs:
           ref: main
           path: sa-public-runner
           persist-credentials: false
+      - name: Checkout private source workflow metadata
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: 3spine
+          persist-credentials: false
+      - name: Reject all remaining self-hosted runner assignments in private source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -nE '^[[:space:]]*runs-on:[[:space:]]*.*self-hosted' 3spine/.github/workflows; then
+            echo "::error::A private self-hosted runner assignment remains in 3Spine-core"
+            exit 1
+          fi
+          echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
