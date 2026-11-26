@@ -253,3 +253,25 @@ jobs:
             timeout 180 xvfb-run -a "$SPINE_CLI" -l >/dev/null 2>&1 || true
           fi
           rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
+
+  public-secret-capability:
+    name: Check public executor secret availability without exposing values
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Report only configured or missing status
+        env:
+          SOURCE_REPO_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          SPINE_LICENSE: ${{ secrets.SPINE_LICENSE }}
+          SPINE_LINUX_URL: ${{ secrets.SPINE_LINUX_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in SOURCE_REPO_TOKEN ACCESS_TOKEN SPINE_LICENSE SPINE_LINUX_URL; do
+            if [ -n "${!key}" ]; then
+              echo "$key=available" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
