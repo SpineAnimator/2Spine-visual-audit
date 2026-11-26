@@ -106,22 +106,13 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("Run standalone Spine Mask native import and save/reopen/export fixture", self.source)
         self.assertIn("if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'", self.source)
 
-    def test_queued_native_work_fails_loudly_when_editor_secrets_are_missing(self):
-        self.assertIn("Fail queued native work when licensed Editor secrets are missing", self.source)
-        self.assertIn(
-            "if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'",
-            self.source,
-        )
-        self.assertIn(
-            "SPINE_MASK_NATIVE_QUEUED_WORK_BLOCKED_MISSING_EDITOR_SECRETS",
-            self.source,
-        )
-
-    def test_missing_editor_secrets_wait_without_failing_public_queue_worker(self):
-        start = self.source.index("Fail queued native work when licensed Editor secrets are missing")
+    def test_missing_editor_secrets_keep_queued_native_work_pending(self):
+        start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
         end = self.source.index("Install Spine 4.3.26 and headless OpenGL dependencies", start)
         waiting_step = self.source[start:end]
-        self.assertIn("SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS", waiting_step)
+        self.assertIn("if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'", waiting_step)
+        self.assertIn("SPINE_MASK_NATIVE_QUEUED_WORK_WAITING_FOR_EDITOR_SECRETS", waiting_step)
+        self.assertIn("A Spine Mask job remains queued", waiting_step)
         self.assertIn("exit 0", waiting_step)
         self.assertNotIn("exit 1", waiting_step)
 
