@@ -131,6 +131,16 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertGreaterEqual(self.source.count("secrets: inherit"), len(expected))
         self.assertIn("3spine-psd-validation", self.source)
         self.assertIn("3spine-spine-link-project-export", self.source)
+        self.assertIn("3spine-psd-site-e2e", self.source)
+        self.assertIn("suite: public-site-e2e", self.source)
+
+    def test_public_site_psd_e2e_is_scheduled_on_public_runner(self):
+        wrapper = Path(".github/workflows/public-site-psd-e2e.yml").read_text(encoding="utf-8")
+        self.assertIn("cron: '41 5 * * *'", wrapper)
+        self.assertIn("runs-on: ubuntu-24.04", Path("sa-public-runner/.github/workflows/public-ubuntu-runner-probe.yml").read_text(encoding="utf-8"))
+        self.assertIn("SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@91dbb0f5392e491307d0051627fb0ca3de96f398", wrapper)
+        self.assertIn("suite: public-site-e2e", wrapper)
+        self.assertIn("secrets: inherit", wrapper)
 
 
 if __name__ == "__main__":
