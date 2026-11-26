@@ -79,6 +79,13 @@ jobs:
             exit 1
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
+          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml spine-link-project-export.yml; do
+            test ! -e "3spine/.github/workflows/$retired" || {
+              echo "::error::Legacy private execution workflow still exists: $retired"
+              exit 1
+            }
+          done
+          echo 'THREESPINE_RUNNER_JOBS_MOVED_TO_PUBLIC_EXECUTORS_PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify no legacy private runner bootstrap remains
         run: python 3spine/tests/test_spine_archive_runner_config.py
       - uses: actions/setup-python@v5
