@@ -225,14 +225,50 @@ jobs:
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: 3spine
           persist-credentials: false
+      - name: Pin private 3Spine source revision
+        run: echo "THREESPINE_SHA=$(git -C 3spine rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Check Cloudflare gateway authorization before polling
+        id: gateway
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SPINE_MASK_NATIVE_GATEWAY_WAITING_FOR_TOKEN" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          private_repo="$(GH_TOKEN="$GH_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
+          if [ "$private_repo" != "true" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SPINE_MASK_NATIVE_GATEWAY_SOURCE_TOKEN_PRIVATE_REPO_READ_FAILED" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          status="$(curl --silent --show-error --max-time 15 --output "$RUNNER_TEMP/mask-gateway-queue.json" --write-out '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$SPINE_MASK_GATEWAY/v2/private/queue" || true)"
+          if [ "$status" != "200" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SPINE_MASK_NATIVE_GATEWAY_WAITING_FOR_TOKEN" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Public runner can read the private source, but the Cloudflare gateway rejected its token (HTTP $status)."
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "SPINE_MASK_NATIVE_GATEWAY_AUTH_PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep private queue pending while gateway authorization is unavailable
+        if: steps.gateway.outputs.ready != 'true'
+        shell: bash
+        run: |
+          echo 'SPINE_MASK_NATIVE_QUEUE_WAITING_FOR_GATEWAY_AUTH' >> "$GITHUB_STEP_SUMMARY"
+          exit 0
       - name: Poll private Cloudflare v2 queue first
+        if: steps.gateway.outputs.ready == 'true'
         id: next
         run: python scripts/spine_mask_v2_ci.py --probe
       - name: Enqueue synthetic full Spine ZIP only for an explicit manual roundtrip with an empty queue
-        if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
+        if: steps.gateway.outputs.ready == 'true' && steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
         run: python scripts/spine_mask_v2_ci.py --selftest
       - name: Poll the synthetic roundtrip job
         id: selftest_next
@@ -241,9 +277,11 @@ jobs:
       - name: Check licensed Editor availability without exposing credentials
         id: editor
         shell: bash
+        env:
+          GATEWAY_READY: ${{ steps.gateway.outputs.ready }}
         run: |
           set -euo pipefail
-          if [ -n "$SPINE_LICENSE" ] && [ -n "$SPINE_LINUX_URL" ]; then
+          if [ "$GATEWAY_READY" = "true" ] && [ -n "$SPINE_LICENSE" ] && [ -n "$SPINE_LINUX_URL" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -309,6 +347,33 @@ jobs:
           set -euo pipefail
           node scripts/spine-mask-browser-e2e.mjs
           echo 'SPINE_MASK_LIVE_SITE_PUBLIC_UBUNTU_EDITOR_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve native Editor proof and receipt in a private 3Spine draft Release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+          GH_REPO: vladleopold/3Spine-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          if [ -d "$RUNNER_TEMP/spine-mask-tool-editor-proof" ]; then
+            while IFS= read -r -d '' file; do files+=("$file"); done < <(find "$RUNNER_TEMP/spine-mask-tool-editor-proof" -type f -print0)
+          fi
+          if [ -f "$RUNNER_TEMP/spine-mask-v2-receipt.json" ]; then
+            files+=("$RUNNER_TEMP/spine-mask-v2-receipt.json")
+          fi
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No private native proof or receipt was produced."
+            exit 0
+          fi
+          test "$(gh api "repos/$GH_REPO" --jq .private)" = true
+          TAG="spine-mask-native-evidence-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
+          gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1 || \
+            gh release create "$TAG" --draft --latest=false --target "$THREESPINE_SHA" --repo "$GH_REPO" \
+              --title "Private Spine Mask native Editor evidence $GITHUB_RUN_ID" \
+              --notes "Private native Editor proof and queue receipt. Public runner: $GITHUB_REPOSITORY. 3Spine source: $THREESPINE_SHA."
+          gh release upload "$TAG" "${files[@]}" --repo "$GH_REPO" --clobber
+          echo "SPINE_MASK_PRIVATE_EVIDENCE_RELEASE=$TAG" >> "$GITHUB_STEP_SUMMARY"
       - name: Deactivate licensed Spine session and erase temporary data
         if: always()
         shell: bash
@@ -317,8 +382,8 @@ jobs:
             timeout 180 xvfb-run -a "$SPINE_CLI" -l >/dev/null 2>&1 || true
           fi
           rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
-      - name: Upload native Editor proof and queue receipt
-        if: always()
+      - name: Keep private native Editor proof out of public Actions artifacts
+        if: false # Private user projects, PNGs and receipts are retained only in private 3Spine.
         uses: actions/upload-artifact@v4
         with:
           name: spine-mask-public-ubuntu-native-proof
