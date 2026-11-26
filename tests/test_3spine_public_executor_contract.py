@@ -50,21 +50,31 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertNotIn("workflow_call:", self.source)
 
     def test_migrated_native_editor_and_export_jobs_are_absent_from_private_source(self):
-        private_workflows = Path("3spine/.github/workflows")
+        repository_root = Path(__file__).resolve().parents[1]
+        private_workflows = repository_root / "3spine/.github/workflows"
         if not private_workflows.exists():
             self.skipTest("Private source checkout is available only in the public executor CI job")
-        migrated = (
+        retired = (
             "verify-clgb71-editor-linux.yml",
             "verify-volume360-editor-linux.yml",
             "verify-user-spine-project.yml",
             "verify-cherry-pr123-editor.yml",
             "verify-cherry-pr131-hidden-hemisphere.yml",
-            "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
-        for filename in migrated:
+        for filename in retired:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+        # Retain the private control-plane gateway only while it delegates to a pinned public workflow.
+        control_plane = private_workflows / "spine-link-project-export.yml"
+        if control_plane.exists():
+            source = control_plane.read_text(encoding="utf-8")
+            self.assertRegex(
+                source,
+                r"(?m)^\s*uses:\s*SpineAnimator/Spine-Link-project-export/\.github/workflows/runner\.yml@[0-9a-f]{40}\s*$",
+            )
+            self.assertNotRegex(source, r"(?m)^\s*runs-on:")
 
     def test_cherry360_native_editor_jobs_are_delegated_to_public_psd_runner(self):
         self.assertIn("cherry360-pr123-public-editor:", self.source)
