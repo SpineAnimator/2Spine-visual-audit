@@ -71,9 +71,9 @@ class PublicExecutorContractTests(unittest.TestCase):
             source = control_plane.read_text(encoding="utf-8")
             self.assertRegex(
                 source,
-                r"(?m)^\\s*uses:\\s*SpineAnimator/Spine-Link-project-export/\\.github/workflows/runner\\.yml@[0-9a-f]{40}\\s*$",
+                r"(?m)^\s*uses:\s*SpineAnimator/Spine-Link-project-export/\.github/workflows/runner\.yml@[0-9a-f]{40}\s*$",
             )
-            self.assertNotRegex(source, r"(?m)^\\s*runs-on:")
+            self.assertNotRegex(source, r"(?m)^\s*runs-on:")
 
     def test_user_spine_project_validation_is_called_from_public_executor(self):
         self.assertIn("user-spine-project-public-validation:", self.source)
