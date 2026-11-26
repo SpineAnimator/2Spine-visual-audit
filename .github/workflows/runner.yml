@@ -2,7 +2,7 @@ name: Private 2Spine visual-audit executor
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [2spine-visual-audit]
+    types: [2spine-visual-audit, runner-probe]
 permissions:
   contents: read
 concurrency:
@@ -10,15 +10,17 @@ concurrency:
   cancel-in-progress: false
 jobs:
   runner-probe:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - run: |
+      - name: Confirm public ephemeral runner
+        run: |
           set -euo pipefail
           echo "Public ephemeral runner allocated: $RUNNER_NAME ($RUNNER_OS)"
           uname -s
   execute-private-checks:
-    runs-on: ubuntu-latest
+    if: github.event_name != 'repository_dispatch' || github.event.action != 'runner-probe'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Require private source credential
@@ -46,7 +48,6 @@ jobs:
             scripts/verify_selected_rgb_native_evidence.py
             tests/test_audit_clgb71_spine_render.py
             tests/test_create_native_frame_manifest.py
-            .github/workflows/verify-clgb71-editor-linux.yml
             tests/test_selected_rgb_native_evidence.py
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
