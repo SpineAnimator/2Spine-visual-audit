@@ -1,5 +1,9 @@
 name: Spine-Link Computer health on public Ubuntu
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-computer-health-public.yml'
   workflow_dispatch:
   schedule:
     - cron: '*/30 * * * *'
