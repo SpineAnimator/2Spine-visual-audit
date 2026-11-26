@@ -32,8 +32,9 @@ on:
 permissions:
   contents: read
   actions: read
+  actions: read
 concurrency:
-  group: 3spine-public-executor-${{ github.event.action || inputs.task || github.event_name }}
+  group: 3spine-public-executor-${{ github.event.action || github.event_name }}
   cancel-in-progress: false
 jobs:
   public-executor-contract:
