@@ -47,7 +47,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   public-executor-contract:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     name: Public runner and private-source security contract
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -79,6 +79,8 @@ jobs:
             exit 1
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify no legacy private runner bootstrap remains
+        run: python -m unittest discover -s 3spine/tests -p test_spine_archive_runner_config.py -v
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
