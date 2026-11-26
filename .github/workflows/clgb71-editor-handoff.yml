@@ -18,7 +18,7 @@ jobs:
           github-token: ${{ secrets.SOURCE_REPO_TOKEN }}
           script: |
             const source = { owner: 'SpineAnimator', repo: 'spine-animator-private' };
-            const target = { owner: 'vladleopold', repo: '3Spine-core' };
+            const target = { owner: 'SpineAnimator', repo: '2Spine-visual-audit' };
             try {
               const runs = await github.rest.actions.listWorkflowRuns({
                 ...source,
@@ -50,21 +50,21 @@ jobs:
               }
               await github.rest.repos.createDispatchEvent({
                 ...target,
-                event_type: 'sa-clgb71-editor',
+                event_type: '3spine-clgb71-editor',
                 client_payload: {
                   source_repo: 'SpineAnimator/spine-animator-private',
                   artifact_run_id: String(run.id),
                   expected_source_sha: run.head_sha
                 }
               });
-              core.notice(`Dispatched source run ${run.id} at ${run.head_sha} to the licensed 3Spine Editor gate.`);
+              core.notice(`Dispatched source run ${run.id} at ${run.head_sha} to the public Ubuntu licensed 3Spine Editor executor.`);
               await core.summary
                 .addHeading('Licensed 3Spine handoff requested')
                 .addList([
                   `Source run: ${run.id}`,
                   `Source SHA: ${run.head_sha}`,
                   `Artifact: ${artifact.name}`,
-                  'Target: vladleopold/3Spine-core',
+                  'Target: SpineAnimator/2Spine-visual-audit (public Ubuntu executor)',
                   'Artistic approval remains separate from technical import/render validation.'
                 ])
                 .write();
