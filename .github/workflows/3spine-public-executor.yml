@@ -390,19 +390,19 @@ jobs:
   cherry360-pr123-public-editor:
     if: github.event.action == '3spine-cherry-pr123-editor' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'cherry-pr123' || inputs.task == 'all'))
     name: Cherry 360 PR123 licensed Editor gate • public Ubuntu
-    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr123-licensed-editor.yml@842b7f9bf7c39976507d32e404fda96f3875328a
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr123-licensed-editor.yml@69c9ee4416aba3b511fc80ed9182aa97afaaff83
     secrets: inherit
 
   cherry360-pr131-public-editor:
     if: github.event.action == '3spine-cherry-pr131-editor' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'cherry-pr131' || inputs.task == 'all'))
     name: Cherry 360 PR131 licensed Editor gate • public Ubuntu
-    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr131-licensed-editor.yml@842b7f9bf7c39976507d32e404fda96f3875328a
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr131-licensed-editor.yml@69c9ee4416aba3b511fc80ed9182aa97afaaff83
     secrets: inherit
 
   user-spine-project-public-validation:
     if: github.event.action == '3spine-user-spine-project' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'user-spine-project' || inputs.task == 'all'))
     name: User Spine project licensed validation • public Ubuntu
-    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@842b7f9bf7c39976507d32e404fda96f3875328a
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@69c9ee4416aba3b511fc80ed9182aa97afaaff83
     with:
       source-repository: vladleopold/3Spine-core
       source-ref: verify-user-logo3-20261121
