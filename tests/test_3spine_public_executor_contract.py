@@ -120,7 +120,7 @@ class PublicExecutorContractTests(unittest.TestCase):
         start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
         end = self.source.index("Install Spine 4.3.26 and headless OpenGL dependencies", start)
         waiting_step = self.source[start:end]
-        self.assertIn("SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS", waiting_step)
+        self.assertIn("SPINE_MASK_NATIVE_QUEUED_WORK_WAITING_FOR_EDITOR_SECRETS", waiting_step)
         self.assertIn("exit 0", waiting_step)
         self.assertNotIn("exit 1", waiting_step)
 
