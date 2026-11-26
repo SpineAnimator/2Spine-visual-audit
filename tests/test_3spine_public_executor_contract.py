@@ -59,12 +59,19 @@ class PublicExecutorContractTests(unittest.TestCase):
             "verify-user-spine-project.yml",
             "verify-cherry-pr123-editor.yml",
             "verify-cherry-pr131-hidden-hemisphere.yml",
+            "web-convert.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_web_convert_queue_is_polled_from_public_psd_runner(self):
+        source = (Path(".github/workflows/3spine-web-convert-public.yml")).read_text(encoding="utf-8")
+        self.assertIn("cron: '*/5 * * * *'", source)
+        self.assertIn("SpineAnimator/sa-psd-tool-runner/.github/workflows/web-convert-public.yml@", source)
+        self.assertIn("secrets: inherit", source)
 
     def test_cherry360_native_editor_jobs_are_delegated_to_public_psd_runner(self):
         self.assertIn("cherry360-pr123-public-editor:", self.source)
