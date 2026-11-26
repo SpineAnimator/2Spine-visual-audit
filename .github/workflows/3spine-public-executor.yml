@@ -239,8 +239,8 @@ jobs:
           set -euo pipefail
           headers="$RUNNER_TEMP/github-source-token-headers.txt"
           status="$(curl --silent --show-error --max-time 15 -D "$headers" -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' https://api.github.com/repos/vladleopold/3Spine-core || true)"
-          remaining="$(awk 'BEGIN{IGNORECASE=1} /^x-ratelimit-remaining:/ {gsub("\\r",""); print $2}' "$headers" | tail -1)"
-          reset="$(awk 'BEGIN{IGNORECASE=1} /^x-ratelimit-reset:/ {gsub("\\r",""); print $2}' "$headers" | tail -1)"
+          remaining="$(grep -i '^x-ratelimit-remaining:' "$headers" | tail -1 | cut -d: -f2 | tr -d '[:space:]')"
+          reset="$(grep -i '^x-ratelimit-reset:' "$headers" | tail -1 | cut -d: -f2 | tr -d '[:space:]')"
           echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_HTTP=$status" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "SOURCE_REPO_TOKEN_GITHUB_RATE_LIMIT_REMAINING=${remaining:-unknown}" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "SOURCE_REPO_TOKEN_GITHUB_RATE_LIMIT_RESET=${reset:-unknown}" | tee -a "$GITHUB_STEP_SUMMARY"
