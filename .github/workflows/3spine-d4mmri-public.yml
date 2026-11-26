@@ -1,0 +1,20 @@
+name: D4MMRI real Spine project • public Ubuntu
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-d4mmri-public.yml'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [3spine-d4mmri-real-spine]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: public-d4mmri-real-spine
+  cancel-in-progress: false
+jobs:
+  generate-real-spine:
+    name: Generate real Spine project and private ZIP evidence
+    uses: SpineAnimator/sa-public-runner/.github/workflows/d4mmri-real-spine-public.yml@cd76f049064dcafc1e6890e296bd3465f291f232
+    secrets: inherit
