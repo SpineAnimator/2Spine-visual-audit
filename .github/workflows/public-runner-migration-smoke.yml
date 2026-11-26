@@ -1,0 +1,54 @@
+name: Public runner migration smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/public-runner-migration-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-ubuntu-probe:
+    name: Verify this public repository received an ephemeral Ubuntu 24.04 runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Verify runner allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          grep -q 'Ubuntu 24.04' /etc/os-release
+          echo "Public repository: $GITHUB_REPOSITORY"
+          echo "Runner: $RUNNER_NAME ($RUNNER_OS/$RUNNER_ARCH)"
+          uname -a
+          echo 'PUBLIC_REPOSITORY_UBUNTU_24_04_PASS' >> "$GITHUB_STEP_SUMMARY"
+
+  spine-link-full-cloud:
+    name: Spine-Link full cloud E2E on public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    secrets: inherit
+
+  spine-link-computer-health:
+    name: Spine-Link Ubuntu computer health on public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    secrets: inherit
+
+  spine-converter:
+    name: 3Spine converter on public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    secrets: inherit
+
+  psd-private-source:
+    name: PSD/PSB validation from private source on public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@14ab734df00e2efaa95e0463645bcfb48891c20f
+    with:
+      source-repository: SpineAnimator/spine-animator-private
+      source-ref: main
+    secrets: inherit
+
+  spine-link-project-export:
+    name: Spine-Link private project export checks on public Ubuntu
+    uses: SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@5f90a85ed706398cf99245f22271ba548f762e41
+    secrets: inherit
