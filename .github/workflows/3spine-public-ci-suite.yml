@@ -18,5 +18,5 @@ concurrency:
 jobs:
   full-ci:
     name: Run 3Spine unit, browser, asset and public-site checks on public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-public-ci-suite.yml@5cd2d14d2e88cb45bf73f0cebefe6dd26f1286a8
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-public-ci-suite.yml@ba19eeebe85b65671b349a6dee9f838d111983fc
     secrets: inherit
