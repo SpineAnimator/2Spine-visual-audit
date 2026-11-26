@@ -89,7 +89,7 @@ jobs:
 
   spine-link-full-cloud:
     name: Spine-Link full cloud E2E on public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@3287c762031f22db0b589de80a0914143847563a
     secrets: inherit
 
   spine-link-computer-health:
