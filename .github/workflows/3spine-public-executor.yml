@@ -26,10 +26,12 @@ on:
       - 3spine-psd-site-e2e
       - 3spine-spine-link-project-export
       - 3spine-user-spine-project
+      - 3spine-cherry-pr123-editor
+      - 3spine-cherry-pr131-editor
   workflow_dispatch:
     inputs:
       task:
-        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, psd-site-e2e, project-export, user-spine-project, or all"
+        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, psd-site-e2e, project-export, user-spine-project, cherry-pr123, cherry-pr131, or all"
         required: true
         default: mask-offline
         type: string
@@ -383,6 +385,18 @@ jobs:
     with:
       source-repository: SpineAnimator/spine-animator-private
       source-ref: main
+    secrets: inherit
+
+  cherry360-pr123-public-editor:
+    if: github.event.action == '3spine-cherry-pr123-editor' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'cherry-pr123' || inputs.task == 'all'))
+    name: Cherry 360 PR123 licensed Editor gate • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr123-licensed-editor.yml@842b7f9bf7c39976507d32e404fda96f3875328a
+    secrets: inherit
+
+  cherry360-pr131-public-editor:
+    if: github.event.action == '3spine-cherry-pr131-editor' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'cherry-pr131' || inputs.task == 'all'))
+    name: Cherry 360 PR131 licensed Editor gate • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/cherry360-pr131-licensed-editor.yml@842b7f9bf7c39976507d32e404fda96f3875328a
     secrets: inherit
 
   user-spine-project-public-validation:
