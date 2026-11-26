@@ -114,7 +114,6 @@ class PublicExecutorContractTests(unittest.TestCase):
 
     def test_every_task_is_delegated_to_a_public_ubuntu_workflow(self):
         expected = [
-            "SpineAnimator/sa-public-runner/.github/workflows/spine-mask-full-project-ubuntu.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
             "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
             "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
             "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
