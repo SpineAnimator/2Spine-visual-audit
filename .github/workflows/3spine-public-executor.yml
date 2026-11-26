@@ -23,11 +23,12 @@ on:
       - 3spine-clgb71-audit
       - 3spine-converter
       - 3spine-psd-validation
+      - 3spine-psd-site-e2e
       - 3spine-spine-link-project-export
   workflow_dispatch:
     inputs:
       task:
-        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, project-export, or all"
+        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, psd-site-e2e, project-export, or all"
         required: true
         default: mask-offline
         type: string
@@ -370,6 +371,16 @@ jobs:
     if: github.event.action == '3spine-spine-link-project-export' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'project-export' || inputs.task == 'all'))
     name: Spine-Link project export contract • public Ubuntu
     uses: SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@5f90a85ed706398cf99245f22271ba548f762e41
+    secrets: inherit
+
+  public-site-psd-browser-e2e:
+    if: github.event.action == '3spine-psd-site-e2e' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'psd-site-e2e' || inputs.task == 'all'))
+    name: Public site PSD-to-ZIP browser E2E • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@91dbb0f5392e491307d0051627fb0ca3de96f398
+    with:
+      source-repository: vladleopold/3Spine-core
+      source-ref: main
+      suite: public-site-e2e
     secrets: inherit
 
   public-secret-capability:
