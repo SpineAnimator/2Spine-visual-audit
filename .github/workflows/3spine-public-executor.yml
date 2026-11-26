@@ -110,7 +110,7 @@ jobs:
           retention-days: 7
 
   licensed-spine-mask-roundtrip:
-    if: github.event_name == 'schedule' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native')
     name: Spine Mask full project API to licensed Spine Editor • public Ubuntu
     needs: spine-mask-offline-regression
     runs-on: ubuntu-24.04
