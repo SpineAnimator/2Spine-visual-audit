@@ -117,7 +117,7 @@ class PublicExecutorContractTests(unittest.TestCase):
         )
 
     def test_missing_editor_secrets_wait_without_failing_public_queue_worker(self):
-        start = self.source.index("Fail queued native work when licensed Editor secrets are missing")
+        start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
         end = self.source.index("Install Spine 4.3.26 and headless OpenGL dependencies", start)
         waiting_step = self.source[start:end]
         self.assertIn("SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS", waiting_step)
