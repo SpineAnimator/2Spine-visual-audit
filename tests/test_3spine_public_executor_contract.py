@@ -123,7 +123,7 @@ class PublicExecutorContractTests(unittest.TestCase):
             "SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
             "SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
             "SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@14ab734df00e2efaa95e0463645bcfb48891c20f",
-            "SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@5f90a85ed706398cf99245f22271ba548f762e41",
+            "SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@2b076cd3a9ae0b76c60bf538bcf470bf43f197f5",
         ]
         for reusable in expected:
             with self.subTest(reusable=reusable):
