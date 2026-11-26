@@ -8,5 +8,5 @@ permissions:
 jobs:
   public-ubuntu:
     name: Execute on GitHub-hosted Ubuntu 24.04
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter.yml@cc9b75ef7763734fc4ce2dfd746560c3eb48884c
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@cc9b75ef7763734fc4ce2dfd746560c3eb48884c
     secrets: inherit
