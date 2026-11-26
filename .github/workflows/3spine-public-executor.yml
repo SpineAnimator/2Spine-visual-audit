@@ -134,6 +134,7 @@ jobs:
           path: ${{ runner.temp }}/3spine-public-runner.txt
           retention-days: 3
 
+  # The gateway caches only successful SHA-256 token fingerprints for 300s; rate-limited/failed checks are never cached.
   spine-mask-offline-regression:
     if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-offline' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task != 'probe')
     name: Spine Mask gateway and complete ZIP tests • public Ubuntu
