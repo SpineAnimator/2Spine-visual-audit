@@ -36,6 +36,10 @@ PUBLIC_WORKFLOWS = {
         ".github/workflows/3spine-converter-test.yml",
         "c330365e58a3b8393e40de295505f66088a7a002",
     ),
+    ".github/workflows/3spine-saver-selftest-public.yml": (
+        ".github/workflows/3spine-saver-selftest.yml",
+        "fcee8c23f4b2ad116dc12f0b57f426dde1d658ce",
+    ),
 }
 
 
@@ -68,6 +72,7 @@ class PublicExecutorContractTests(unittest.TestCase):
             "last7-real-preview.yml",
             "verify-3spine-public.yml",
             "history-preview-download-e2e.yml",
+            "saver-selftest.yml",
             "converter-static-assets-gate.yml",
             "selected-native-frame-sha256-tests.yml",
             "guard-geometry-regression.yml",
