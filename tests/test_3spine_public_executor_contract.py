@@ -105,14 +105,14 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("Run standalone Spine Mask native import and save/reopen/export fixture", self.source)
         self.assertIn("if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'", self.source)
 
-    def test_queued_native_work_fails_loudly_when_editor_secrets_are_missing(self):
-        self.assertIn("Fail queued native work when licensed Editor secrets are missing", self.source)
+    def test_queued_native_work_waits_safely_when_editor_secrets_are_missing(self):
+        self.assertIn("Keep queued native work pending until public Editor secrets are configured", self.source)
         self.assertIn(
             "if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'",
             self.source,
         )
         self.assertIn(
-            "SPINE_MASK_NATIVE_QUEUED_WORK_BLOCKED_MISSING_EDITOR_SECRETS",
+            "SPINE_MASK_NATIVE_QUEUED_WORK_WAITING_FOR_EDITOR_SECRETS",
             self.source,
         )
 
