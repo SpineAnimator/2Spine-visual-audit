@@ -112,5 +112,27 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertNotRegex(self.source, r"(?im)^\s*(echo|printf).*\$SPINE_(LICENSE|LINUX_URL)")
 
 
+    def test_every_task_is_delegated_to_a_public_ubuntu_workflow(self):
+        expected = [
+            "SpineAnimator/sa-public-runner/.github/workflows/spine-mask-full-project-ubuntu.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@14ab734df00e2efaa95e0463645bcfb48891c20f",
+            "SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@5f90a85ed706398cf99245f22271ba548f762e41",
+        ]
+        for reusable in expected:
+            with self.subTest(reusable=reusable):
+                self.assertIn("uses: " + reusable, self.source)
+        self.assertGreaterEqual(self.source.count("secrets: inherit"), len(expected))
+        self.assertIn("3spine-psd-validation", self.source)
+        self.assertIn("3spine-spine-link-project-export", self.source)
+
+
 if __name__ == "__main__":
     unittest.main()
