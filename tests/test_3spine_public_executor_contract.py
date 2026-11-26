@@ -3,7 +3,7 @@ import re
 import unittest
 
 WORKFLOW = Path(".github/workflows/3spine-public-executor.yml")
-PUBLIC_RUNNER_COMMIT = "11421f05d343fdc63cc30c37cdbee97ac8106ca2"
+PUBLIC_RUNNER_COMMIT = "1025db2941d836c0637a49ef11199bf72304c7f2"
 
 
 class PublicExecutorContractTests(unittest.TestCase):
@@ -38,7 +38,9 @@ class PublicExecutorContractTests(unittest.TestCase):
         probe = self.source.index("python scripts/spine_mask_v2_ci.py --probe")
         install = self.source.index("Install Spine 4.3.26")
         self.assertLess(probe, install)
-        self.assertIn("if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'", self.source)
+        self.assertIn("id: editor", self.source)
+        self.assertIn("echo \\\"ready=false\\\" >> \\\"$GITHUB_OUTPUT\\\"", self.source)
+        self.assertIn("if: steps.editor.outputs.ready == 'true'", self.source)
 
     def test_synthetic_roundtrip_is_manual_and_only_runs_when_queue_is_empty(self):
         self.assertIn("if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'", self.source)
