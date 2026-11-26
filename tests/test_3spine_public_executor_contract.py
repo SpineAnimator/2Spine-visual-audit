@@ -188,14 +188,17 @@ class PublicExecutorContractTests(unittest.TestCase):
             self.source,
         )
 
-    def test_mask_gateway_auth_is_preflighted_and_private_editor_proof_is_not_public(self):
+    def test_mask_gateway_auth_uses_worker_cache_and_private_editor_proof_is_not_public(self):
         source = self.source
         self.assertIn("Check Cloudflare gateway authorization before polling", source)
         self.assertIn("SPINE_MASK_NATIVE_GATEWAY_WAITING_FOR_TOKEN", source)
         self.assertIn("if: steps.gateway.outputs.ready == 'true'", source)
         self.assertIn("if: false # Private native Editor proof", source)
         self.assertIn("GH_REPO: vladleopold/3Spine-core", source)
-        self.assertIn("SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS", source)
+        self.assertIn('gh api rate_limit', source)
+        self.assertIn("SOURCE_REPO_TOKEN_CORE_RATE_LIMIT=$rate_limit", source)
+        self.assertNotIn("gh api repos/vladleopold/3Spine-core", source)
+        self.assertNotIn('private_repo="$(GH_TOKEN="$GH_TOKEN" gh api repos/vladleopold/3Spine-core', source)
 
     def test_missing_editor_secrets_wait_without_failing_public_queue_worker(self):
         start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
