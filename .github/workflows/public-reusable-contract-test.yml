@@ -38,5 +38,5 @@ jobs:
     secrets: inherit
   converter:
     if: false
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@31a9d5378ab617c9345b8d384ae1812791ed92f2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@c330365e58a3b8393e40de295505f66088a7a002
     secrets: inherit
