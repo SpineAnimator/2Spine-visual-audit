@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/3spine-public-executor.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/3spine-public-executor.yml'
+      - 'tests/test_3spine_public_executor_contract.py'
   repository_dispatch:
     types:
       - 3spine-mask-offline
@@ -25,6 +29,27 @@ concurrency:
   group: 3spine-public-executor-${{ github.event.action || inputs.task || github.event_name }}
   cancel-in-progress: false
 jobs:
+  public-executor-contract:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    name: Public runner and private-source security contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+          cache: false
+      - name: Lint public executor workflow
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/3spine-public-executor.yml
+      - name: Verify public-only execution and private-source security
+        run: python -m unittest discover -s tests -p test_3spine_public_executor_contract.py -v
+
   public-runner-probe:
     if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
     name: Public Ubuntu 24.04 runner diagnostics
@@ -137,8 +162,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Enqueue synthetic full Spine ZIP through the production gateway
-        if: github.event_name != 'schedule' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
+      - name: Enqueue synthetic full Spine ZIP for an explicit manual roundtrip
+        if: github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
         run: python scripts/spine_mask_v2_ci.py --selftest
       - name: Poll private Cloudflare v2 queue
         id: next
@@ -181,8 +206,8 @@ jobs:
           assert r['originalAssetsRetained']>=1 and r['animationsPreserved']
           print('SPINE_MASK_V2_NATIVE_RECEIPT_VERIFIED',r['jobId'])
           PY
-      - name: Verify returned ZIP through the site read-token API
-        if: steps.next.outputs.found == 'true'
+      - name: Verify returned synthetic ZIP through the site read-token API
+        if: steps.next.outputs.found == 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'
         run: python scripts/spine_mask_v2_ci.py --read-selftest
       - name: Install Chromium for live site E2E
         if: steps.next.outputs.found == 'true'
