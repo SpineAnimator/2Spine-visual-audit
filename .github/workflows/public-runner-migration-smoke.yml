@@ -46,17 +46,17 @@ jobs:
 
   spine-link-full-cloud:
     name: Spine-Link full cloud E2E on public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
     secrets: inherit
 
   spine-link-computer-health:
     name: Spine-Link Ubuntu computer health on public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
     secrets: inherit
 
   spine-converter:
     name: 3Spine converter on public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
     secrets: inherit
 
   psd-private-source:
