@@ -251,43 +251,43 @@ jobs:
   spine-link-full-cloud-e2e:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all')
     name: Spine-Link full cloud E2E • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@8b9de4f890a5ac0c034a2beb8e9ed0d5501a572e
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@97e40bf120eb5ace022213b4a1f869aa7d7ba0cd
     secrets: inherit
 
   spine-link-computer-health:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'computer-health' || inputs.task == 'all')
     name: Spine-Link Computer runner health • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@1918e54251cd4580b714bb5fe98129ea590af9df
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@ada6178e3a9e7b446a6519fa10a271ada022bda5
     secrets: inherit
 
   spine-link-legacy21-import:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'legacy-import' || inputs.task == 'all')
     name: Spine-Link legacy 2.1 import • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@e9985ec5b6aac16e09809cade66017a096826402
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@a261fe6cd5201ca8e9c4408cdb150db1921c0b3c
     secrets: inherit
 
   spine-link-native-export:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'native-export' || inputs.task == 'all')
     name: Spine-Link native export smoke • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@0e02c31f6f78d55f921c691fd6c48a871ef5c3fc
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@49b6e3130fcb0c7418c7d40f35d26e296ea24b4d
     secrets: inherit
 
   spine-link-convert-target:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'convert-target' || inputs.task == 'all')
     name: Spine-Link requested legacy conversion • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@6cb0de68a11f18d5c701021d85b4fea15a9c5dba
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@fc712a911ac568de402d7533481b1ea4aceacdb1
     secrets: inherit
 
   spine-link-latest20-convert:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'latest20' || inputs.task == 'all')
     name: Spine-Link latest legacy conversions • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@9cb400f0dadbbd7091a5b7c03f37ec04c450479f
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@99b8907f2f881070b9612e84c4ee71df32c1ac12
     secrets: inherit
 
   clgb71-render-audit:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all')
     name: CLGB71 native evidence audit • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@7f8caa7b8c89c6105494117bf61cddc9ea44a641
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@3ce6aad1f1ba81f04d4056bb0a4439818b4ebfec
     with:
       source_run_id: ${{ inputs.source_run_id }}
     secrets: inherit
@@ -295,4 +295,4 @@ jobs:
   spine-converter-tests:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all'))
     name: 3Spine converter container tests • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@74a2d34718f0156487abfbba738edc8f2cc6db00
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@e22f826fb7d439804bc23e97f715bb293fc5bb61
