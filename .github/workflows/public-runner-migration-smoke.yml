@@ -1,4 +1,4 @@
-name: Public runner migration smoke
+name: Public runner migration smoke (current private source)
 on:
   push:
     branches: [main]
