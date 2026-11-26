@@ -63,12 +63,22 @@ class PublicExecutorContractTests(unittest.TestCase):
             "generate-d4mmri-real-spine.yml",
             "verify-native-pairs.yml",
             "codespace-convert.yml",
+            "spine-mask-screenshot-delivery.yml",
+            "spine-mask-screenshot-share.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_screenshot_delivery_and_share_are_called_from_public_runner_pool(self):
+        delivery = Path(".github/workflows/3spine-screenshot-delivery-public.yml").read_text(encoding="utf-8")
+        share = Path(".github/workflows/3spine-screenshot-share-public.yml").read_text(encoding="utf-8")
+        self.assertIn("SpineAnimator/sa-public-runner/.github/workflows/spine-mask-screenshot-delivery-public.yml@", delivery)
+        self.assertIn("SpineAnimator/sa-public-runner/.github/workflows/spine-mask-screenshot-share-public.yml@", share)
+        self.assertIn("secrets: inherit", delivery)
+        self.assertIn("secrets: inherit", share)
 
     def test_native_converter_runs_directly_on_public_ubuntu_not_codespaces(self):
         source = Path(".github/workflows/3spine-native-converter-smoke-public.yml").read_text(encoding="utf-8")
