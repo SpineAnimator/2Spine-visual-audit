@@ -383,7 +383,7 @@ jobs:
           fi
           rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
       - name: Keep private native Editor proof out of public Actions artifacts
-        if: false # Private user projects, PNGs and receipts are retained only in private 3Spine.
+        if: false # Private native Editor proof; user projects, PNGs and receipts stay in private 3Spine.
         uses: actions/upload-artifact@v4
         with:
           name: spine-mask-public-ubuntu-native-proof
