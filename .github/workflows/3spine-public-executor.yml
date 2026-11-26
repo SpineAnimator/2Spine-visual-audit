@@ -80,12 +80,369 @@ jobs:
             exit 1
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
-          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml spine-link-project-export.yml; do
+          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml verify-user-spine-project.yml sa-3spine-self-hosted-probe.yml; do
             test ! -e "3spine/.github/workflows/$retired" || {
               echo "::error::Legacy private execution workflow still exists: $retired"
               exit 1
             }
           done
+          control_plane="3spine/.github/workflows/spine-link-project-export.yml"
+          if [ -e "$control_plane" ]; then
+            grep -Eq '^[[:space:]]*uses:[[:space:]]*SpineAnimator/Spine-Link-project-export/\.github/workflows/runner\.yml@[0-9a-f]{40}[[:space:]]*          echo 'THREESPINE_RUNNER_JOBS_MOVED_TO_PUBLIC_EXECUTORS_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify no legacy private runner bootstrap remains
+        run: python 3spine/tests/test_spine_archive_runner_config.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+          cache: false
+      - name: Lint public executor workflow
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/3spine-public-executor.yml
+      - name: Verify public-only execution and private-source security
+        run: python -m unittest discover -s tests -p test_3spine_public_executor_contract.py -v
+
+  public-runner-probe:
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
+    name: Public Ubuntu 24.04 runner diagnostics
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Prove ephemeral public executor allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          grep -q 'Ubuntu 24.04' /etc/os-release
+          {
+            echo "repository=$GITHUB_REPOSITORY"
+            echo "runner_name=$RUNNER_NAME"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            cat /etc/os-release
+            uname -a
+            python3 --version
+            node --version
+            npm --version
+            df -h
+          } | tee "$RUNNER_TEMP/3spine-public-runner.txt"
+          echo '3SPINE_PUBLIC_UBUNTU_24_04_EXECUTOR_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 3spine-public-ubuntu-runner-diagnostics
+          path: ${{ runner.temp }}/3spine-public-runner.txt
+          retention-days: 3
+
+  spine-mask-offline-regression:
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-offline' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task != 'probe')
+    name: Spine Mask gateway and complete ZIP tests • public Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: 3spine
+    steps:
+      - name: Checkout private 3Spine source at the exact dispatched revision
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: ${{ github.event.client_payload.source_sha || 'main' }}
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: 3spine
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact private source revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD | tee "$RUNNER_TEMP/3spine-source-sha.txt"
+          if [ -n "${{ github.event.client_payload.source_sha || '' }}" ]; then
+            test "$(git rev-parse HEAD)" = "${{ github.event.client_payload.source_sha }}"
+          fi
+      - name: Checkout public Spine Mask Tool core for native geometry regression
+        uses: actions/checkout@v4
+        with:
+          repository: SpineAnimator/spine-web-source
+          ref: main
+          path: 3spine/mask-public
+          persist-credentials: false
+      - name: Validate gateway authentication, chunk hashes and compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/spine-mask-v2-gateway.test.mjs
+      # Contract follows the current single clipping-slot export shape from spine-web-source.
+      - name: Run multi-component native geometry and clipping regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/spine-mask-native.mjs
+      - name: Validate complete Spine ZIP, image paths and ZipSlip protection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p test_spine_mask_v2_ci.py -v
+          python -m py_compile scripts/spine_mask_v2_ci.py
+          echo 'SPINE_MASK_V2_PUBLIC_UBUNTU_OFFLINE_REGRESSION_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain nonsensitive test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spine-mask-public-ubuntu-offline-diagnostics
+          path: |
+            ${{ runner.temp }}/3spine-source-sha.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  licensed-spine-mask-roundtrip:
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'mask-native' || inputs.task == 'all'))
+    name: Spine Mask full project API to licensed Spine Editor • public Ubuntu
+    needs: spine-mask-offline-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      SPINE_MASK_GATEWAY: https://spine-mask-native-gateway.vladyslavchaplygin.workers.dev
+      GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+      SPINE_LICENSE: ${{ secrets.SPINE_LICENSE }}
+      SPINE_LINUX_URL: ${{ secrets.SPINE_LINUX_URL }}
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GALLIUM_DRIVER: llvmpipe
+    defaults:
+      run:
+        working-directory: 3spine
+    steps:
+      - name: Checkout private 3Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: ${{ github.event.client_payload.source_sha || 'main' }}
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: 3spine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Poll private Cloudflare v2 queue first
+        id: next
+        run: python scripts/spine_mask_v2_ci.py --probe
+      - name: Enqueue synthetic full Spine ZIP only for an explicit manual roundtrip with an empty queue
+        if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
+        run: python scripts/spine_mask_v2_ci.py --selftest
+      - name: Poll the synthetic roundtrip job
+        id: selftest_next
+        if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
+        run: python scripts/spine_mask_v2_ci.py --probe
+      - name: Check licensed Editor availability without exposing credentials
+        id: editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$SPINE_LICENSE" ] && [ -n "$SPINE_LINUX_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Add SPINE_LICENSE and SPINE_LINUX_URL to the Actions secrets of SpineAnimator/2Spine-visual-audit."
+          fi
+      - name: Keep queued native work pending until public Editor secrets are configured
+        if: steps.next.outputs.found == 'true' && steps.editor.outputs.ready != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'SPINE_MASK_NATIVE_QUEUED_WORK_WAITING_FOR_EDITOR_SECRETS' >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning::A Spine Mask job remains queued; add SPINE_LICENSE and SPINE_LINUX_URL to SpineAnimator/2Spine-visual-audit to resume on the next public Ubuntu poll."
+          exit 0
+      - name: Install Spine 4.3.26 and headless OpenGL dependencies
+        if: steps.editor.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb x11-utils x11-xserver-utils libxrandr2 libgl1-mesa-dri libgl1 libxrender1 libxi6 libxext6 libxfixes3 libxcursor1
+          curl --fail --location --silent --show-error --max-time 600 --retry 2 -A 'Mozilla/5.0 (X11; Linux x86_64)' "$SPINE_LINUX_URL" -o "$RUNNER_TEMP/spine-linux.gz"
+          gzip -t "$RUNNER_TEMP/spine-linux.gz"
+          mkdir -p "$RUNNER_TEMP/spine"
+          gzip -dc "$RUNNER_TEMP/spine-linux.gz" | tar -xf - -C "$RUNNER_TEMP/spine"
+          SPINE_CLI="$RUNNER_TEMP/spine/Spine/Spine.sh"
+          if [ ! -x "$SPINE_CLI" ]; then SPINE_CLI="$RUNNER_TEMP/spine/Spine.sh"; fi
+          test -x "$SPINE_CLI"
+          echo "SPINE_CLI=$SPINE_CLI" >> "$GITHUB_ENV"
+      - name: Run standalone Spine Mask native import and save/reopen/export fixture
+        if: steps.editor.outputs.ready == 'true'
+        run: python scripts/verify_spine_mask_tool_editor.py "$SPINE_CLI" "$RUNNER_TEMP/spine-mask-tool-editor-proof"
+      - name: Import, verify, export and return complete project ZIP
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
+        env:
+          JOB_ID: ${{ steps.next.outputs.id || steps.selftest_next.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/spine_mask_v2_ci.py --process-id "$JOB_ID"
+          test -s "$RUNNER_TEMP/spine-mask-v2-receipt.json"
+          python - <<'PY'
+          import json,os
+          path=os.path.join(os.environ['RUNNER_TEMP'],'spine-mask-v2-receipt.json')
+          r=json.load(open(path))
+          assert r['clippingAttachments']==1 and r['nativeImportVerified'] and r['nativeExportVerified']
+          assert r['originalAssetsRetained']>=1 and r['animationsPreserved']
+          print('SPINE_MASK_V2_NATIVE_RECEIPT_VERIFIED',r['jobId'])
+          PY
+      - name: Verify returned synthetic ZIP through the site read-token API
+        if: steps.selftest_next.outputs.found == 'true' && steps.editor.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'
+        run: python scripts/spine_mask_v2_ci.py --read-selftest
+      - name: Install Chromium for live site E2E
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/mask-browser" --no-audit --no-fund --silent playwright@1.56.1
+          "$RUNNER_TEMP/mask-browser/node_modules/.bin/playwright" install chromium
+          echo "CHROME_PATH=" >> "$GITHUB_ENV"
+      - name: Live website Make all through gateway and licensed Ubuntu Editor
+        if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          node scripts/spine-mask-browser-e2e.mjs
+          echo 'SPINE_MASK_LIVE_SITE_PUBLIC_UBUNTU_EDITOR_PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Deactivate licensed Spine session and erase temporary data
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${SPINE_CLI:-}" ] && [ -x "$SPINE_CLI" ]; then
+            timeout 180 xvfb-run -a "$SPINE_CLI" -l >/dev/null 2>&1 || true
+          fi
+          rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
+      - name: Upload native Editor proof and queue receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spine-mask-public-ubuntu-native-proof
+          path: |
+            ${{ runner.temp }}/spine-mask-tool-editor-proof
+            ${{ runner.temp }}/spine-mask-v2-receipt.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  spine-link-full-cloud:
+    if: github.event.action == '3spine-spine-link-full-cloud' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all'))
+    name: Spine-Link full cloud E2E • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  spine-link-computer-health:
+    if: github.event.action == '3spine-computer-health' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'computer-health' || inputs.task == 'all'))
+    name: Spine-Link computer worker health • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  spine-link-legacy21-import:
+    if: github.event.action == '3spine-legacy21-import' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'legacy-import' || inputs.task == 'all'))
+    name: Spine-Link legacy 2.1 import • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  spine-link-native-export:
+    if: github.event.action == '3spine-native-export' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'native-export' || inputs.task == 'all'))
+    name: Spine-Link native export smoke • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  spine-link-convert-target:
+    if: github.event.action == '3spine-convert-target' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'convert-target' || inputs.task == 'all'))
+    name: Spine-Link requested legacy conversion • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  spine-link-latest20:
+    if: github.event.action == '3spine-latest20' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'latest20' || inputs.task == 'all'))
+    name: Spine-Link latest 20 legacy conversions • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  clgb71-public-audit:
+    if: github.event.action == '3spine-clgb71-audit' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all'))
+    name: CLGB71 native frame audit • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    with:
+      source_run_id: ${{ inputs.source_run_id || '' }}
+    secrets: inherit
+
+  spine-converter-public:
+    if: github.event.action == '3spine-converter' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all'))
+    name: 3Spine converter CI/CD • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3
+    secrets: inherit
+
+  psd-tool-public-validation:
+    if: github.event.action == '3spine-psd-validation' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'psd' || inputs.task == 'all'))
+    name: PSD/PSB and Spine 4.3 validation • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@14ab734df00e2efaa95e0463645bcfb48891c20f
+    with:
+      source-repository: SpineAnimator/spine-animator-private
+      source-ref: main
+    secrets: inherit
+
+  user-spine-project-public-validation:
+    if: github.event.action == '3spine-user-spine-project' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'user-spine-project' || inputs.task == 'all'))
+    name: User Spine project licensed validation • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@f8e11d7bf0931a45a0f849d1478de47168dfa8ac
+    with:
+      source-repository: vladleopold/3Spine-core
+      source-ref: verify-user-logo3-20261121
+      suite: user-spine-project
+    secrets: inherit
+
+  spine-link-project-export-public:
+    if: github.event.action == '3spine-spine-link-project-export' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'project-export' || inputs.task == 'all'))
+    name: Spine-Link project export contract • public Ubuntu
+    uses: SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@2b076cd3a9ae0b76c60bf538bcf470bf43f197f5
+    secrets: inherit
+
+  public-site-psd-browser-e2e:
+    if: github.event.action == '3spine-psd-site-e2e' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'psd-site-e2e' || inputs.task == 'all'))
+    name: Public site PSD-to-ZIP browser E2E • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@91dbb0f5392e491307d0051627fb0ca3de96f398
+    with:
+      source-repository: vladleopold/3Spine-core
+      source-ref: main
+      suite: public-site-e2e
+    secrets: inherit
+
+  public-secret-capability:
+    name: Check public executor secret availability without exposing values
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Report only configured or missing status
+        env:
+          SOURCE_REPO_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          SPINE_LICENSE: ${{ secrets.SPINE_LICENSE }}
+          SPINE_LINUX_URL: ${{ secrets.SPINE_LINUX_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in SOURCE_REPO_TOKEN ACCESS_TOKEN SPINE_LICENSE SPINE_LINUX_URL; do
+            if [ -n "${!key}" ]; then
+              echo "$key=available" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+ "$control_plane" || {
+              echo "::error::Private Spine-Link control plane must delegate to the pinned public reusable workflow"
+              exit 1
+            }
+            if grep -Eq '^[[:space:]]*runs-on:' "$control_plane"; then
+              echo "::error::Private Spine-Link control plane must not allocate an executor"
+              exit 1
+            fi
+          fi
           echo 'THREESPINE_RUNNER_JOBS_MOVED_TO_PUBLIC_EXECUTORS_PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify no legacy private runner bootstrap remains
         run: python 3spine/tests/test_spine_archive_runner_config.py
