@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   public-runner-probe:
-    if: github.event_name == 'schedule' || github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
     name: Public Ubuntu 24.04 runner diagnostics
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -57,7 +57,7 @@ jobs:
           retention-days: 3
 
   spine-mask-offline-regression:
-    if: github.event_name == 'schedule' || github.event.action == '3spine-mask-offline' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task != 'probe')
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-offline' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task != 'probe')
     name: Spine Mask gateway and complete ZIP tests • public Ubuntu
     runs-on: ubuntu-24.04
     timeout-minutes: 15
