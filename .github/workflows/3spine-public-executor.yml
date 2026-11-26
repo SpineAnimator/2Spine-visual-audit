@@ -82,12 +82,23 @@ jobs:
             exit 1
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
-          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml spine-link-project-export.yml; do
+          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml verify-user-spine-project.yml verify-cherry-pr123-editor.yml verify-cherry-pr131-hidden-hemisphere.yml sa-3spine-self-hosted-probe.yml; do
             test ! -e "3spine/.github/workflows/$retired" || {
               echo "::error::Legacy private execution workflow still exists: $retired"
               exit 1
             }
           done
+          control_plane="3spine/.github/workflows/spine-link-project-export.yml"
+          if [ -e "$control_plane" ]; then
+            grep -Eq '^[[:space:]]*uses:[[:space:]]*SpineAnimator/Spine-Link-project-export/\.github/workflows/runner\.yml@[0-9a-f]{40}[[:space:]]*$' "$control_plane" || {
+              echo "::error::Private Spine-Link control plane must delegate to the pinned public reusable workflow"
+              exit 1
+            }
+            if grep -Eq '^[[:space:]]*runs-on:' "$control_plane"; then
+              echo "::error::Private Spine-Link control plane must not allocate an executor"
+              exit 1
+            fi
+          fi
           echo 'THREESPINE_RUNNER_JOBS_MOVED_TO_PUBLIC_EXECUTORS_PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify no legacy private runner bootstrap remains
         run: python 3spine/tests/test_spine_archive_runner_config.py
