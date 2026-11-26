@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/3spine-public-executor.yml'
+      - 'tests/test_3spine_public_executor_contract.py'
   pull_request:
     paths:
       - '.github/workflows/3spine-public-executor.yml'
