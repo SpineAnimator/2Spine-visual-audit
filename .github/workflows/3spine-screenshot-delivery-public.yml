@@ -1,0 +1,17 @@
+name: Spine Mask private screenshot delivery • public Ubuntu
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-screenshot-delivery-public.yml'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [3spine-screenshot-delivery]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  encode:
+    name: Encode screenshot privately on public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/spine-mask-screenshot-delivery-public.yml@a4cec50512c4aaec3846456e2af87635c34b07bd
+    secrets: inherit
