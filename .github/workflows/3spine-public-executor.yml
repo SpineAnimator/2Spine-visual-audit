@@ -17,11 +17,10 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: Public Ubuntu task to execute
+        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, or all"
         required: true
         default: mask-offline
-        type: choice
-        options: [mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, all]
+        type: string
       source_run_id:
         description: Exact successful 3Spine licensed Editor run ID for clgb71 audit
         required: false
