@@ -506,5 +506,11 @@ jobs:
               echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+          private_repo="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
+          if [ "$private_repo" = "true" ]; then
+            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_FAILED" >> "$GITHUB_STEP_SUMMARY"
+          fi
           rate_limit="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api rate_limit --jq '.resources.core | "remaining=\(.remaining) reset=\(.reset)"' 2>/dev/null || echo unavailable)"
           echo "SOURCE_REPO_TOKEN_CORE_RATE_LIMIT=$rate_limit" | tee -a "$GITHUB_STEP_SUMMARY"
