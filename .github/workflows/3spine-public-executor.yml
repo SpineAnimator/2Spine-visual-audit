@@ -134,6 +134,7 @@ jobs:
           path: ${{ runner.temp }}/3spine-public-runner.txt
           retention-days: 3
 
+  # The gateway caches only successful SHA-256 token fingerprints for 300s; rate-limited/failed checks are never cached.
   spine-mask-offline-regression:
     if: github.event_name == 'push' || github.event_name == 'schedule' || github.event.action == '3spine-mask-offline' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task != 'probe')
     name: Spine Mask gateway and complete ZIP tests • public Ubuntu
@@ -512,6 +513,8 @@ jobs:
             fi
           done
           private_repo="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
+rate_limit="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api rate_limit --jq '.resources.core | "remaining=\(.remaining) reset=\(.reset)"' 2>/dev/null || echo unavailable)"
+echo "SOURCE_REPO_TOKEN_CORE_RATE_LIMIT=$rate_limit" >> "$GITHUB_STEP_SUMMARY"
           if [ "$private_repo" = "true" ]; then
             echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS" >> "$GITHUB_STEP_SUMMARY"
           else
