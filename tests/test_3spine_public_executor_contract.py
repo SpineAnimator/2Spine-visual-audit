@@ -46,7 +46,7 @@ class PublicExecutorContractTests(unittest.TestCase):
 
     def test_jobs_are_hosted_in_the_public_repository(self):
         self.assertIn("runs-on: ubuntu-24.04", self.source)
-        self.assertNotRegex(self.source, r"(?m)^\\s*runs-on:.*self-hosted")
+        self.assertNotRegex(self.source, r"(?m)^\s*runs-on:.*self-hosted")
         self.assertNotIn("workflow_call:", self.source)
 
     def test_public_runner_polls_every_five_minutes(self):
@@ -57,7 +57,7 @@ class PublicExecutorContractTests(unittest.TestCase):
             with self.subTest(caller=caller_path):
                 caller = Path(caller_path).read_text(encoding="utf-8")
                 match = re.search(
-                    r"uses: SpineAnimator/sa-public-runner/[^\\s]+@([0-9a-f]{40})",
+                    r"uses: SpineAnimator/sa-public-runner/[^\s]+@([0-9a-f]{40})",
                     caller,
                 )
                 self.assertIsNotNone(match, caller_path)
@@ -66,7 +66,7 @@ class PublicExecutorContractTests(unittest.TestCase):
                 reusable = Path("sa-public-runner", runner_path).read_text(encoding="utf-8")
                 self.assertIn("workflow_call:", reusable)
                 self.assertIn("runs-on: ubuntu-24.04", reusable)
-                self.assertNotRegex(reusable, r"(?m)^\\s*runs-on:.*self-hosted")
+                self.assertNotRegex(reusable, r"(?m)^\s*runs-on:.*self-hosted")
 
     def test_private_source_and_gateway_use_the_scoped_token(self):
         self.assertIn("token: ${{ secrets.SOURCE_REPO_TOKEN }}", self.source)
@@ -75,7 +75,7 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", self.source)
 
     def test_clgb71_public_executor_has_read_only_actions_permission(self):
-        self.assertIn("permissions:\\n  contents: read\\n  actions: read", self.source)
+        self.assertIn("permissions:\n  contents: read\n  actions: read", self.source)
 
     def test_native_editor_is_started_only_for_queued_work(self):
         probe = self.source.index("python scripts/spine_mask_v2_ci.py --probe")
@@ -98,7 +98,7 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertIn("python scripts/spine_mask_v2_ci.py --read-selftest", self.source)
 
     def test_license_values_are_never_printed(self):
-        self.assertNotRegex(self.source, r"(?im)^\\s*(echo|printf).*\\$SPINE_(LICENSE|LINUX_URL)")
+        self.assertNotRegex(self.source, r"(?im)^\s*(echo|printf).*\$SPINE_(LICENSE|LINUX_URL)")
 
 
 if __name__ == "__main__":
