@@ -66,12 +66,26 @@ class PublicExecutorContractTests(unittest.TestCase):
             "spine-mask-screenshot-delivery.yml",
             "spine-mask-screenshot-share.yml",
             "last7-real-preview.yml",
+            "verify-3spine-public.yml",
+            "history-preview-download-e2e.yml",
+            "converter-static-assets-gate.yml",
+            "selected-native-frame-sha256-tests.yml",
+            "guard-geometry-regression.yml",
+            "playson-preview-integrity.yml",
+            "native-psd-color-unit.yml",
+            "360-visual-regression-unit.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_full_ci_suite_runs_from_public_runner_pool(self):
+        source = Path(".github/workflows/3spine-public-ci-suite.yml").read_text(encoding="utf-8")
+        self.assertIn("cron: '0 4 * * *'", source)
+        self.assertIn("SpineAnimator/sa-public-runner/.github/workflows/3spine-public-ci-suite.yml@", source)
+        self.assertIn("secrets: inherit", source)
 
     def test_last_seven_archive_audit_runs_hourly_from_public_runner(self):
         source = Path(".github/workflows/3spine-last7-real-preview-public.yml").read_text(encoding="utf-8")
