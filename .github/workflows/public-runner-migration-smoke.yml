@@ -25,6 +25,25 @@ jobs:
           uname -a
           echo 'PUBLIC_REPOSITORY_UBUNTU_24_04_PASS' >> "$GITHUB_STEP_SUMMARY"
 
+  legacy-runner-decommission-contract:
+    name: Assert private runner infrastructure is fully removed from 3Spine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout private 3Spine source
+        uses: actions/checkout@v4
+        with:
+          repository: vladleopold/3Spine-core
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: 3spine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run public-only infrastructure contract
+        run: python -m unittest discover -s 3spine/tests -p test_spine_archive_runner_config.py -v
+
   spine-link-full-cloud:
     name: Spine-Link full cloud E2E on public Ubuntu
     uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154
