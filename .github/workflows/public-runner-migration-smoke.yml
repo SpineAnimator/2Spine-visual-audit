@@ -67,8 +67,11 @@ jobs:
                   runner = re.match(r"^    runs-on:\s*(.*)$", line)
                   if runner and current_job:
                       found.append((path.as_posix(), current_job, runner.group(1).strip() or "<multiline>"))
-          for path, job, runner in found:
-              print(f"PRIVATE_WORKFLOW_RUNS_ON {path}:{job} = {runner}")
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "private-workflow-inventory.log"), "w", encoding="utf-8") as inventory:
+              for path, job, runner in found:
+                  line = f"PRIVATE_WORKFLOW_RUNS_ON {path}:{job} = {runner}"
+                  print(line)
+                  inventory.write(line + "\\n")
           print(f"PRIVATE_WORKFLOW_RUNS_ON_TOTAL={len(found)}")
           import os
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
@@ -77,6 +80,10 @@ jobs:
               for path, job, runner in found:
                   summary.write(f"- `{path}` · `{job}` · `{runner}`\\n")
           PY
+          if [ "$(grep -c '^PRIVATE_WORKFLOW_RUNS_ON ' "$RUNNER_TEMP/private-workflow-inventory.log" 2>/dev/null || true)" -gt 0 ]; then
+            echo "::error::Private source still defines executable workflow jobs; move them to public executors."
+            exit 1
+          fi
       - name: Run public-only infrastructure contract
         run: python 3spine/tests/test_spine_archive_runner_config.py
 
