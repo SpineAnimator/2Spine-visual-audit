@@ -48,6 +48,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
+          import os
 
           root = Path("3spine/.github")
           files = sorted(root.rglob("*.yml")) + sorted(root.rglob("*.yaml"))
@@ -71,14 +72,13 @@ jobs:
               for path, job, runner in found:
                   line = f"PRIVATE_WORKFLOW_RUNS_ON {path}:{job} = {runner}"
                   print(line)
-                  inventory.write(line + "\\n")
+                  inventory.write(line + "\n")
           print(f"PRIVATE_WORKFLOW_RUNS_ON_TOTAL={len(found)}")
-          import os
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("## Private-source workflow execution inventory\\n")
-              summary.write(f"Explicit runs-on jobs found: **{len(found)}**\\n\\n")
+              summary.write("## Private-source workflow execution inventory\n")
+              summary.write(f"Explicit runs-on jobs found: **{len(found)}**\n\n")
               for path, job, runner in found:
-                  summary.write(f"- `{path}` · `{job}` · `{runner}`\\n")
+                  summary.write(f"- `{path}` · `{job}` · `{runner}`\n")
           PY
           if [ "$(grep -c '^PRIVATE_WORKFLOW_RUNS_ON ' "$RUNNER_TEMP/private-workflow-inventory.log" 2>/dev/null || true)" -gt 0 ]; then
             echo "::error::Private source still defines executable workflow jobs; move them to public executors."
