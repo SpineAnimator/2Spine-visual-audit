@@ -60,12 +60,22 @@ class PublicExecutorContractTests(unittest.TestCase):
             "verify-cherry-pr123-editor.yml",
             "verify-cherry-pr131-hidden-hemisphere.yml",
             "web-convert.yml",
+            "generate-d4mmri-real-spine.yml",
+            "verify-native-pairs.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_d4mmri_and_native_pair_jobs_are_called_from_public_runner_pool(self):
+        d4mmri = Path(".github/workflows/3spine-d4mmri-public.yml").read_text(encoding="utf-8")
+        native_pairs = Path(".github/workflows/3spine-native-pairs-public.yml").read_text(encoding="utf-8")
+        self.assertIn("SpineAnimator/sa-public-runner/.github/workflows/d4mmri-real-spine-public.yml@", d4mmri)
+        self.assertIn("SpineAnimator/sa-public-runner/.github/workflows/verify-native-pairs-public.yml@", native_pairs)
+        self.assertIn("secrets: inherit", d4mmri)
+        self.assertIn("secrets: inherit", native_pairs)
 
     def test_web_convert_queue_is_polled_from_public_psd_runner(self):
         source = (Path(".github/workflows/3spine-web-convert-public.yml")).read_text(encoding="utf-8")
