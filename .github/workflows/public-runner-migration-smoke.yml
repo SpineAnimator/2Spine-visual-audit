@@ -55,16 +55,17 @@ jobs:
           for path in files:
               current_job = None
               for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                  job = re.match(r"^  ([A-Za-z0-9_-]+):\\s*$", line)
+                  job = re.match(r"^  ([A-Za-z0-9_-]+):\s*$", line)
                   if job:
                       current_job = job.group(1)
-                  runner = re.match(r"^    runs-on:\\s*(.*)$", line)
+                  runner = re.match(r"^    runs-on:\s*(.*)$", line)
                   if runner and current_job:
                       found.append((path.as_posix(), current_job, runner.group(1).strip() or "<multiline>"))
           for path, job, runner in found:
               print(f"PRIVATE_WORKFLOW_RUNS_ON {path}:{job} = {runner}")
           print(f"PRIVATE_WORKFLOW_RUNS_ON_TOTAL={len(found)}")
-          with open("$GITHUB_STEP_SUMMARY", "a", encoding="utf-8") as summary:
+          import os
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("## Private-source workflow execution inventory\\n")
               summary.write(f"Explicit runs-on jobs found: **{len(found)}**\\n\\n")
               for path, job, runner in found:
