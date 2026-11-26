@@ -49,6 +49,20 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertNotRegex(self.source, r"(?m)^\s*runs-on:.*self-hosted")
         self.assertNotIn("workflow_call:", self.source)
 
+    def test_migrated_native_editor_and_export_jobs_are_absent_from_private_source(self):
+        private_workflows = Path("3spine/.github/workflows")
+        if not private_workflows.exists():
+            self.skipTest("Private source checkout is available only in the public executor CI job")
+        migrated = (
+            "verify-clgb71-editor-linux.yml",
+            "verify-volume360-editor-linux.yml",
+            "spine-link-project-export.yml",
+            "sa-3spine-self-hosted-probe.yml",
+        )
+        for filename in migrated:
+            with self.subTest(workflow=filename):
+                self.assertFalse((private_workflows / filename).exists(), filename)
+
     def test_private_source_has_no_self_hosted_runner_assignments(self):
         self.assertIn("THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS", self.source)
         self.assertIn("runs-on:[[:space:]]*.*self-hosted", self.source)
