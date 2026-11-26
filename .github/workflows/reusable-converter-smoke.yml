@@ -8,5 +8,5 @@ permissions:
   contents: read
 jobs:
   converter:
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@e22f826fb7d439804bc23e97f715bb293fc5bb61
     secrets: inherit
