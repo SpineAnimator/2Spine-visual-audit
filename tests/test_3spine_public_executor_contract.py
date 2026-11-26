@@ -198,7 +198,7 @@ class PublicExecutorContractTests(unittest.TestCase):
 
     def test_synthetic_roundtrip_is_manual_and_only_runs_when_queue_is_empty(self):
         self.assertIn(
-            "if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''",
+            "if: steps.gateway.outputs.ready == 'true' && steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''",
             self.source,
         )
         self.assertIn("python scripts/spine_mask_v2_ci.py --selftest", self.source)
