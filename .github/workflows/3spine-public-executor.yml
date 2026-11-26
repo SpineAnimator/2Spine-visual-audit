@@ -226,7 +226,7 @@ jobs:
           path: 3spine
           persist-credentials: false
       - name: Pin private 3Spine source revision
-        run: echo "THREESPINE_SHA=$(git -C 3spine rev-parse HEAD)" >> "$GITHUB_ENV"
+        run: echo "THREESPINE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -272,7 +272,7 @@ jobs:
         run: python scripts/spine_mask_v2_ci.py --selftest
       - name: Poll the synthetic roundtrip job
         id: selftest_next
-        if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
+        if: steps.gateway.outputs.ready == 'true' && steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
         run: python scripts/spine_mask_v2_ci.py --probe
       - name: Check licensed Editor availability without exposing credentials
         id: editor
@@ -511,3 +511,9 @@ jobs:
               echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+          private_repo="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
+          if [ "$private_repo" = "true" ]; then
+            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_FAILED" >> "$GITHUB_STEP_SUMMARY"
+          fi
