@@ -56,12 +56,20 @@ class PublicExecutorContractTests(unittest.TestCase):
         migrated = (
             "verify-clgb71-editor-linux.yml",
             "verify-volume360-editor-linux.yml",
+            "verify-user-spine-project.yml",
             "spine-link-project-export.yml",
             "sa-3spine-self-hosted-probe.yml",
         )
         for filename in migrated:
             with self.subTest(workflow=filename):
                 self.assertFalse((private_workflows / filename).exists(), filename)
+
+    def test_user_spine_project_validation_is_called_from_public_executor(self):
+        self.assertIn("user-spine-project-public-validation:", self.source)
+        self.assertIn("SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@", self.source)
+        self.assertIn("source-repository: vladleopold/3Spine-core", self.source)
+        self.assertIn("source-ref: verify-user-logo3-20261121", self.source)
+        self.assertIn("suite: user-spine-project", self.source)
 
     def test_private_source_has_no_self_hosted_runner_assignments(self):
         self.assertIn("THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS", self.source)
