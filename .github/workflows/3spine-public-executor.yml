@@ -256,6 +256,6 @@ jobs:
     secrets: inherit
 
   spine-converter-tests:
-    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all'))
     name: 3Spine converter container tests • public Ubuntu
     uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@3d6d1d92918055168dca3423d04c1b0a4e92c3fb
