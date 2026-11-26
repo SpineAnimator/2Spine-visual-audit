@@ -1,5 +1,9 @@
 name: 3Spine converter tests on public Ubuntu
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-converter-public.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 */6 * * *'
