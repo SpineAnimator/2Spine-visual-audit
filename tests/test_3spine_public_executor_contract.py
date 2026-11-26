@@ -77,13 +77,20 @@ class PublicExecutorContractTests(unittest.TestCase):
     def test_clgb71_public_executor_has_read_only_actions_permission(self):
         self.assertIn("permissions:\n  contents: read\n  actions: read", self.source)
 
-    def test_native_editor_is_started_only_for_queued_work(self):
+    def test_native_editor_requires_secrets_and_processes_only_queued_work(self):
         probe = self.source.index("python scripts/spine_mask_v2_ci.py --probe")
         install = self.source.index("Install Spine 4.3.26")
         self.assertLess(probe, install)
         self.assertIn("id: editor", self.source)
         self.assertIn('echo "ready=false" >> "$GITHUB_OUTPUT"', self.source)
-        self.assertIn("if: steps.editor.outputs.ready == 'true'", self.source)
+        self.assertIn("SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS", self.source)
+        self.assertIn("Run standalone Spine Mask native import and save/reopen/export fixture", self.source)
+        self.assertIn("if: (steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true') && steps.editor.outputs.ready == 'true'", self.source)
+
+    def test_native_geometry_regression_runs_on_public_ubuntu(self):
+        self.assertIn("repository: SpineAnimator/spine-web-source", self.source)
+        self.assertIn("path: 3spine/mask-public", self.source)
+        self.assertIn("node --test tests/spine-mask-native.mjs", self.source)
 
     def test_synthetic_roundtrip_is_manual_and_only_runs_when_queue_is_empty(self):
         self.assertIn(
