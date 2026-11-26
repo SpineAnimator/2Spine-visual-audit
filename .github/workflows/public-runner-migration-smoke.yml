@@ -49,8 +49,14 @@ jobs:
           from pathlib import Path
           import re
 
-          root = Path("3spine/.github/workflows")
-          files = sorted(root.glob("*.yml")) + sorted(root.glob("*.yaml"))
+          root = Path("3spine/.github")
+          files = sorted(root.rglob("*.yml")) + sorted(root.rglob("*.yaml"))
+          print(f"PRIVATE_GITHUB_DIR_EXISTS={root.exists()}")
+          print(f"PRIVATE_WORKFLOW_FILES_TOTAL={len(files)}")
+          for path in files:
+              print(f"PRIVATE_WORKFLOW_FILE {path}")
+          if not files:
+              raise SystemExit("No private-source workflow YAML files were found; refusing to report a clean inventory")
           found = []
           for path in files:
               current_job = None
