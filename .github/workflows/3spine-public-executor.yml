@@ -243,12 +243,6 @@ jobs:
             echo "SPINE_MASK_NATIVE_GATEWAY_WAITING_FOR_TOKEN" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          private_repo="$(GH_TOKEN="$GH_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
-          if [ "$private_repo" != "true" ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "SPINE_MASK_NATIVE_GATEWAY_SOURCE_TOKEN_PRIVATE_REPO_READ_FAILED" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
           status="$(curl --silent --show-error --max-time 15 --output "$RUNNER_TEMP/mask-gateway-queue.json" --write-out '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$SPINE_MASK_GATEWAY/v2/private/queue" || true)"
           if [ "$status" != "200" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -512,11 +506,5 @@ jobs:
               echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
-          private_repo="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api repos/vladleopold/3Spine-core --jq .private 2>/dev/null || true)"
           rate_limit="$(GH_TOKEN="$SOURCE_REPO_TOKEN" gh api rate_limit --jq '.resources.core | "remaining=\(.remaining) reset=\(.reset)"' 2>/dev/null || echo unavailable)"
-          echo "SOURCE_REPO_TOKEN_CORE_RATE_LIMIT=$rate_limit" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$private_repo" = "true" ]; then
-            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_PASS" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_READ_FAILED" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "SOURCE_REPO_TOKEN_CORE_RATE_LIMIT=$rate_limit" | tee -a "$GITHUB_STEP_SUMMARY"
