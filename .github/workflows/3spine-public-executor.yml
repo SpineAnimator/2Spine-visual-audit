@@ -82,7 +82,7 @@ jobs:
             exit 1
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
-          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml verify-user-spine-project.yml verify-cherry-pr123-editor.yml verify-cherry-pr131-hidden-hemisphere.yml spine-link-project-export.yml web-convert.yml generate-d4mmri-real-spine.yml verify-native-pairs.yml codespace-convert.yml spine-mask-screenshot-delivery.yml spine-mask-screenshot-share.yml; do
+          for retired in verify-clgb71-editor-linux.yml verify-volume360-editor-linux.yml verify-user-spine-project.yml verify-cherry-pr123-editor.yml verify-cherry-pr131-hidden-hemisphere.yml spine-link-project-export.yml web-convert.yml generate-d4mmri-real-spine.yml verify-native-pairs.yml codespace-convert.yml spine-mask-screenshot-delivery.yml spine-mask-screenshot-share.yml last7-real-preview.yml; do
             test ! -e "3spine/.github/workflows/$retired" || {
               echo "::error::Legacy private execution workflow still exists: $retired"
               exit 1
