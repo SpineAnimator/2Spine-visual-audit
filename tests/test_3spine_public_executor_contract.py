@@ -34,7 +34,7 @@ PUBLIC_WORKFLOWS = {
     ),
     ".github/workflows/3spine-converter-public.yml": (
         ".github/workflows/3spine-converter-test.yml",
-        "cc9b75ef7763734fc4ce2dfd746560c3eb48884c",
+        "3652fa4a35d48347b26720360a9d1cb836dcc34c",
     ),
 }
 
