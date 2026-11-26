@@ -1,0 +1,20 @@
+name: 3Spine native converter smoke • public Ubuntu
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-native-converter-smoke-public.yml'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [3spine-native-converter-smoke]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: public-3spine-native-converter-smoke
+  cancel-in-progress: false
+jobs:
+  native-converter-smoke:
+    name: Run native converter without Codespaces
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-native-converter-smoke-public.yml@b937918fa87379e3115cc9f396b3fa252449c0e3
+    secrets: inherit
