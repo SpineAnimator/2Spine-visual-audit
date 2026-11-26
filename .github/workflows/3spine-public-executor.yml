@@ -214,13 +214,13 @@ jobs:
   spine-link-full-cloud-e2e:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all')
     name: Spine-Link full cloud E2E • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@9427757cae89b09efe570e13d6a2a46ec0d24702
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@140e494eaad1a0bcc9f3c86f0f629f5bda27a9db
     secrets: inherit
 
   spine-link-computer-health:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'computer-health' || inputs.task == 'all')
     name: Spine-Link Computer runner health • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@279b491e17f7c33706a41f5d939c65ecec258c1c
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@80c8ea4460808c63b2a086754367bda88bb7d7ef
     secrets: inherit
 
   spine-link-legacy21-import:
@@ -232,25 +232,25 @@ jobs:
   spine-link-native-export:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'native-export' || inputs.task == 'all')
     name: Spine-Link native export smoke • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@b2c132bc81645ac289a42f077e0b20ddeb8a243c
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@63948a7aaa807b0b7bbbd9b0aab2e288052e7324
     secrets: inherit
 
   spine-link-convert-target:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'convert-target' || inputs.task == 'all')
     name: Spine-Link requested legacy conversion • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@5e892b2a0c57b9acc341a78fd7d44094eab905
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@5e892b2a0c57b9acc341a78fd7d44094d4eab905
     secrets: inherit
 
   spine-link-latest20-convert:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'latest20' || inputs.task == 'all')
     name: Spine-Link latest legacy conversions • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@1b277c872c88c4d62519bb7f9d11c52f44960cab
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@1b277c872c88c4d62519acd97d11c52f44960cab
     secrets: inherit
 
   clgb71-render-audit:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all')
     name: CLGB71 native evidence audit • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@1d867ff7e5c31885a03b32298e0bb618f85267ef
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@204955725a3d119876c34acbd0ac1450c765a5d7
     with:
       source_run_id: ${{ inputs.source_run_id }}
     secrets: inherit
@@ -258,4 +258,4 @@ jobs:
   spine-converter-tests:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all'))
     name: 3Spine converter container tests • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@3d6d1d92918055168dca3423d04c1b0a4e92c3fb
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@ec604227777216d5e5d128b0a3032c46a4100b6f
