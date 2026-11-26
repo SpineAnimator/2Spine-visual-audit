@@ -42,7 +42,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run public-only infrastructure contract
-        run: python -m unittest discover -s 3spine/tests -p test_spine_archive_runner_config.py -v
+        run: python 3spine/tests/test_spine_archive_runner_config.py
 
   spine-link-full-cloud:
     name: Spine-Link full cloud E2E on public Ubuntu
