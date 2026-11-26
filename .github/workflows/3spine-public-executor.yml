@@ -80,7 +80,7 @@ jobs:
           fi
           echo 'THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify no legacy private runner bootstrap remains
-        run: python -m unittest discover -s 3spine/tests -p test_spine_archive_runner_config.py -v
+        run: python 3spine/tests/test_spine_archive_runner_config.py
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
