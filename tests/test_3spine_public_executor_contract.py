@@ -114,14 +114,14 @@ class PublicExecutorContractTests(unittest.TestCase):
 
     def test_every_task_is_delegated_to_a_public_ubuntu_workflow(self):
         expected = [
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
-            "SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@94465cbfb8f6b6e79135dc31db17711ff138c154",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
+            "SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@5eb2a5d0fb98a4330e2e9b86f65cac831f3712c3",
             "SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@14ab734df00e2efaa95e0463645bcfb48891c20f",
             "SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@2b076cd3a9ae0b76c60bf538bcf470bf43f197f5",
         ]
