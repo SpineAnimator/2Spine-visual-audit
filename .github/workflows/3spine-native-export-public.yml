@@ -6,5 +6,5 @@ permissions:
 jobs:
   public-ubuntu:
     name: Execute on GitHub-hosted Ubuntu 24.04
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-native-export.yml@b0c9bec0ebb59c5800c57cb9acdadf52bef3a5cd
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@b0c9bec0ebb59c5800c57cb9acdadf52bef3a5cd
     secrets: inherit
