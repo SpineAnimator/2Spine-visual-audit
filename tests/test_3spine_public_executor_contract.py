@@ -166,6 +166,14 @@ class PublicExecutorContractTests(unittest.TestCase):
             self.source,
         )
 
+    def test_mask_gateway_auth_is_preflighted_and_private_editor_proof_is_not_public(self):
+        source = self.source
+        self.assertIn("Check Cloudflare gateway authorization before polling", source)
+        self.assertIn("SPINE_MASK_NATIVE_GATEWAY_WAITING_FOR_TOKEN", source)
+        self.assertIn("if: steps.gateway.outputs.ready == 'true'", source)
+        self.assertIn("if: false # Private native Editor proof", source)
+        self.assertIn("GH_REPO: vladleopold/3Spine-core", source)
+
     def test_missing_editor_secrets_wait_without_failing_public_queue_worker(self):
         start = self.source.index("Keep queued native work pending until public Editor secrets are configured")
         end = self.source.index("Install Spine 4.3.26 and headless OpenGL dependencies", start)
