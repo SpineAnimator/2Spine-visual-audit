@@ -25,10 +25,11 @@ on:
       - 3spine-psd-validation
       - 3spine-psd-site-e2e
       - 3spine-spine-link-project-export
+      - 3spine-user-spine-project
   workflow_dispatch:
     inputs:
       task:
-        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, psd-site-e2e, project-export, or all"
+        description: "Task: mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, psd, psd-site-e2e, project-export, user-spine-project, or all"
         required: true
         default: mask-offline
         type: string
@@ -382,6 +383,16 @@ jobs:
     with:
       source-repository: SpineAnimator/spine-animator-private
       source-ref: main
+    secrets: inherit
+
+  user-spine-project-public-validation:
+    if: github.event.action == '3spine-user-spine-project' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'user-spine-project' || inputs.task == 'all'))
+    name: User Spine project licensed validation • public Ubuntu
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@f8e11d7bf0931a45a0f849d1478de47168dfa8ac
+    with:
+      source-repository: vladleopold/3Spine-core
+      source-ref: verify-user-logo3-20261121
+      suite: user-spine-project
     secrets: inherit
 
   spine-link-project-export-public:
