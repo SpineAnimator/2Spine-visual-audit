@@ -16,7 +16,12 @@ on:
         required: true
         default: mask-offline
         type: choice
-        options: [mask-offline, mask-native, probe]
+        options: [mask-offline, mask-native, probe, full-cloud, computer-health, legacy-import, native-export, convert-target, latest20, clgb-audit, converter, all]
+      source_run_id:
+        description: Exact successful 3Spine licensed Editor run ID for clgb71 audit
+        required: false
+        default: ''
+        type: string
   schedule:
     - cron: '*/5 * * * *'
 permissions:
@@ -205,3 +210,52 @@ jobs:
             timeout 180 xvfb-run -a "$SPINE_CLI" -l >/dev/null 2>&1 || true
           fi
           rm -rf "$RUNNER_TEMP/spine" "$RUNNER_TEMP/spine-linux.gz" "$RUNNER_TEMP/spine-mask-v2-selftest-session.json"
+
+  spine-link-full-cloud-e2e:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all')
+    name: Spine-Link full cloud E2E • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@aeb651688303e2225648cc610aaefa04263de05c
+    secrets: inherit
+
+  spine-link-computer-health:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'computer-health' || inputs.task == 'all')
+    name: Spine-Link Computer runner health • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@279b491e17f7c33706a41f5d939c65ecec258c1c
+    secrets: inherit
+
+  spine-link-legacy21-import:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'legacy-import' || inputs.task == 'all')
+    name: Spine-Link legacy 2.1 import • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@cc9292b8f25a3967c3f94e12d6e89b23f79d1944
+    secrets: inherit
+
+  spine-link-native-export:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'native-export' || inputs.task == 'all')
+    name: Spine-Link native export smoke • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@b2c132bc81645ac289a42f077e0b20ddeb8a243c
+    secrets: inherit
+
+  spine-link-convert-target:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'convert-target' || inputs.task == 'all')
+    name: Spine-Link requested legacy conversion • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@5e892b2a0c57b9acc341a78fd7d44094eab905
+    secrets: inherit
+
+  spine-link-latest20-convert:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'latest20' || inputs.task == 'all')
+    name: Spine-Link latest legacy conversions • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@1b277c872c88c4d62519bb7f9d11c52f44960cab
+    secrets: inherit
+
+  clgb71-render-audit:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all')
+    name: CLGB71 native evidence audit • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@423133bad6b022ce97ef12bcdd5440184759d2c0
+    with:
+      source_run_id: ${{ inputs.source_run_id }}
+    secrets: inherit
+
+  spine-converter-tests:
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all')
+    name: 3Spine converter container tests • public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@3d6d1d92918055168dca3423d04c1b0a4e92c3fb
