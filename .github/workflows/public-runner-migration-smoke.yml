@@ -141,7 +141,7 @@ jobs:
   # Keep the browser contract aligned with web-public/index.html control IDs.
   public-site-psd-e2e:
     name: Public site PSD-to-ZIP browser E2E on public Ubuntu
-    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@91dbb0f5392e491307d0051627fb0ca3de96f398
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@51fc9293326fde4afbe6079bbc2a45b6828a5964
     with:
       source-repository: vladleopold/3Spine-core
       source-ref: main
