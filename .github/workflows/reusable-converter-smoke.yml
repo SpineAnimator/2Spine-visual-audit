@@ -1,0 +1,12 @@
+name: Public converter reusable workflow smoke test
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reusable-converter-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  converter:
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    secrets: inherit
