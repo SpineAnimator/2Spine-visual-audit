@@ -138,6 +138,7 @@ jobs:
           test -s private-storage/library_02/index.json
           echo 'PUBLIC_RUNNER_TOKEN_PRIVATE_STORAGE_READ_PASS' >> "$GITHUB_STEP_SUMMARY"
 
+  # Keep the browser contract aligned with web-public/index.html control IDs.
   public-site-psd-e2e:
     name: Public site PSD-to-ZIP browser E2E on public Ubuntu
     uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@91dbb0f5392e491307d0051627fb0ca3de96f398
