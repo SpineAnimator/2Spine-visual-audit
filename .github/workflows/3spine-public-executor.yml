@@ -446,3 +446,20 @@ jobs:
               echo "$key=missing" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+
+      - name: Verify private-source token metadata access used by gateway
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "SOURCE_REPO_TOKEN_METADATA_ACCESS_SKIPPED" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh api repos/vladleopold/3Spine-core --jq '
+            if .full_name == "vladleopold/3Spine-core" and .private == true
+            then "SOURCE_REPO_TOKEN_PRIVATE_METADATA_ACCESS_PASS"
+            else error("SOURCE_REPO_TOKEN cannot read private source repository metadata")
+            end
+          '
