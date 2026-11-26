@@ -388,7 +388,7 @@ jobs:
   user-spine-project-public-validation:
     if: github.event.action == '3spine-user-spine-project' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'user-spine-project' || inputs.task == 'all'))
     name: User Spine project licensed validation • public Ubuntu
-    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@f8e11d7bf0931a45a0f849d1478de47168dfa8ac
+    uses: SpineAnimator/sa-psd-tool-runner/.github/workflows/psd-validation.yml@e49e26316331d783109d994fe31be13984f9133d
     with:
       source-repository: vladleopold/3Spine-core
       source-ref: verify-user-logo3-20261121
