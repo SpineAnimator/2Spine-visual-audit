@@ -13,7 +13,7 @@ permissions:
 jobs:
   public-ubuntu:
     name: Execute on GitHub-hosted Ubuntu 24.04
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-audit.yml@3ce6aad1f1ba81f04d4056bb0a4439818b4ebfec
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@3ce6aad1f1ba81f04d4056bb0a4439818b4ebfec
     with:
       source_run_id: ${{ inputs.source_run_id }}
     secrets: inherit
