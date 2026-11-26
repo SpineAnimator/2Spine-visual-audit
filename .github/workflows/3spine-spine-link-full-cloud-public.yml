@@ -1,0 +1,12 @@
+name: Spine-Link full cloud E2E on public Ubuntu
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'
+permissions:
+  contents: read
+jobs:
+  public-ubuntu:
+    name: Execute on GitHub-hosted Ubuntu 24.04
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud.yml@66b36481fc5cabdde98d786631903f20ea3900bd
+    secrets: inherit
