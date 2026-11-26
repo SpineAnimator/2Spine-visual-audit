@@ -137,6 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/spine-mask-v2-gateway.test.mjs
+      # Contract follows the current single clipping-slot export shape from spine-web-source.
       - name: Run multi-component native geometry and clipping regression
         shell: bash
         run: |
