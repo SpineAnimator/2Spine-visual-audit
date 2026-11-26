@@ -88,6 +88,7 @@ jobs:
         run: python 3spine/tests/test_spine_archive_runner_config.py
 
   spine-link-full-cloud:
+    if: github.event_name == 'workflow_dispatch' # Creates a temporary cloud project; run only on explicit dispatch so cleanup/rate limits are controlled.
     name: Spine-Link full cloud E2E on public Ubuntu
     uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@3287c762031f22db0b589de80a0914143847563a
     secrets: inherit
