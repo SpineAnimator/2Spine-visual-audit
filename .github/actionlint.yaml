@@ -1,4 +1,0 @@
-self-hosted-runner:
-  labels:
-    - sa-psd-tool-runner
-    - saps-worker
