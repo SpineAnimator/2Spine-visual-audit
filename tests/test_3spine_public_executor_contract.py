@@ -50,7 +50,8 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertNotIn("workflow_call:", self.source)
 
     def test_migrated_native_editor_and_export_jobs_are_absent_from_private_source(self):
-        private_workflows = Path("3spine/.github/workflows")
+        repository_root = Path(__file__).resolve().parents[1]
+        private_workflows = repository_root / "3spine/.github/workflows"
         if not private_workflows.exists():
             self.skipTest("Private source checkout is available only in the public executor CI job")
         migrated = (
