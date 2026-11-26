@@ -1,5 +1,9 @@
 name: 3Spine jobs on public Ubuntu executors
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-public-executor.yml'
   repository_dispatch:
     types:
       - 3spine-mask-offline
@@ -14,7 +18,7 @@ on:
         type: choice
         options: [mask-offline, mask-native, probe]
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
 permissions:
   contents: read
 concurrency:
@@ -22,7 +26,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   public-runner-probe:
-    if: github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
+    if: github.event_name == 'schedule' || github.event.action == '3spine-runner-probe' || (github.event_name == 'workflow_dispatch' && inputs.task == 'probe')
     name: Public Ubuntu 24.04 runner diagnostics
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -106,7 +110,7 @@ jobs:
           retention-days: 7
 
   licensed-spine-mask-roundtrip:
-    if: github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native')
+    if: github.event_name == 'schedule' || github.event.action == '3spine-mask-native' || (github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native')
     name: Spine Mask full project API to licensed Spine Editor • public Ubuntu
     needs: spine-mask-offline-regression
     runs-on: ubuntu-24.04
@@ -133,13 +137,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Require licensed Editor credentials in the public executor repository
+      - name: Require licensed Editor credentials when a queued project needs processing
+        if: steps.next.outputs.found == 'true'
         shell: bash
         run: |
           set -euo pipefail
           test -n "$SPINE_LICENSE" || { echo "::error::SPINE_LICENSE is not configured in SpineAnimator/2Spine-visual-audit"; exit 1; }
           test -n "$SPINE_LINUX_URL" || { echo "::error::SPINE_LINUX_URL is not configured in SpineAnimator/2Spine-visual-audit"; exit 1; }
       - name: Enqueue synthetic full Spine ZIP through the production gateway
+        if: github.event_name != 'schedule'
         run: python scripts/spine_mask_v2_ci.py --selftest
       - name: Poll private Cloudflare v2 queue
         id: next
