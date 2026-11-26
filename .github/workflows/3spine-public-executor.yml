@@ -231,6 +231,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Diagnose source token access and GitHub API rate limit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          headers="$RUNNER_TEMP/github-source-token-headers.txt"
+          status="$(curl --silent --show-error --max-time 15 -D "$headers" -o /dev/null -w '%{http_code}' \\
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \\
+            https://api.github.com/repos/vladleopold/3Spine-core || true)"
+          remaining="$(awk 'BEGIN{IGNORECASE=1} /^x-ratelimit-remaining:/ {gsub("\\r",""); print $2}' "$headers" | tail -1)"
+          reset="$(awk 'BEGIN{IGNORECASE=1} /^x-ratelimit-reset:/ {gsub("\\r",""); print $2}' "$headers" | tail -1)"
+          echo "SOURCE_REPO_TOKEN_PRIVATE_REPO_HTTP=$status" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "SOURCE_REPO_TOKEN_GITHUB_RATE_LIMIT_REMAINING=${remaining:-unknown}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "SOURCE_REPO_TOKEN_GITHUB_RATE_LIMIT_RESET=${reset:-unknown}" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$status" != "200" ]; then echo "::warning::Source token cannot currently read the private repository (HTTP $status)."; fi
       - name: Check Cloudflare gateway authorization before polling
         id: gateway
         shell: bash
