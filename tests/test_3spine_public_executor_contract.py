@@ -49,6 +49,10 @@ class PublicExecutorContractTests(unittest.TestCase):
         self.assertNotRegex(self.source, r"(?m)^\s*runs-on:.*self-hosted")
         self.assertNotIn("workflow_call:", self.source)
 
+    def test_private_source_has_no_self_hosted_runner_assignments(self):
+        self.assertIn("THREESPINE_PRIVATE_SELF_HOSTED_RUNNERS_REMOVED_PASS", self.source)
+        self.assertIn("runs-on:[[:space:]]*.*self-hosted", self.source)
+
     def test_public_runner_polls_every_five_minutes(self):
         self.assertIn("cron: '*/5 * * * *'", self.source)
 
