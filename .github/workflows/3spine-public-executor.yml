@@ -179,15 +179,21 @@ jobs:
         id: selftest_next
         if: steps.next.outputs.found != 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native' && env.SPINE_LICENSE != '' && env.SPINE_LINUX_URL != ''
         run: python scripts/spine_mask_v2_ci.py --probe
-      - name: Require licensed Editor credentials when a queued project needs processing
+      - name: Check licensed Editor availability without exposing credentials
+        id: editor
         if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$SPINE_LICENSE" || { echo "::error::SPINE_LICENSE is not configured in SpineAnimator/2Spine-visual-audit"; exit 1; }
-          test -n "$SPINE_LINUX_URL" || { echo "::error::SPINE_LINUX_URL is not configured in SpineAnimator/2Spine-visual-audit"; exit 1; }
+          if [ -n "$SPINE_LICENSE" ] && [ -n "$SPINE_LINUX_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "SPINE_MASK_NATIVE_WAITING_FOR_EDITOR_SECRETS" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Add SPINE_LICENSE and SPINE_LINUX_URL to the Actions secrets of SpineAnimator/2Spine-visual-audit."
+          fi
       - name: Install Spine 4.3.26 and headless OpenGL dependencies
-        if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
+        if: steps.editor.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -201,7 +207,7 @@ jobs:
           test -x "$SPINE_CLI"
           echo "SPINE_CLI=$SPINE_CLI" >> "$GITHUB_ENV"
       - name: Import, verify, export and return complete project ZIP
-        if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
+        if: steps.editor.outputs.ready == 'true'
         env:
           JOB_ID: ${{ steps.next.outputs.id || steps.selftest_next.outputs.id }}
         shell: bash
@@ -218,17 +224,17 @@ jobs:
           print('SPINE_MASK_V2_NATIVE_RECEIPT_VERIFIED',r['jobId'])
           PY
       - name: Verify returned synthetic ZIP through the site read-token API
-        if: steps.selftest_next.outputs.found == 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'
+        if: steps.selftest_next.outputs.found == 'true' && steps.editor.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.task == 'mask-native'
         run: python scripts/spine_mask_v2_ci.py --read-selftest
       - name: Install Chromium for live site E2E
-        if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
+        if: steps.editor.outputs.ready == 'true'
         run: |
           set -euo pipefail
           npm install --prefix "$RUNNER_TEMP/mask-browser" --no-audit --no-fund --silent playwright@1.56.1
           "$RUNNER_TEMP/mask-browser/node_modules/.bin/playwright" install chromium
           echo "CHROME_PATH=" >> "$GITHUB_ENV"
       - name: Live website Make all through gateway and licensed Ubuntu Editor
-        if: steps.next.outputs.found == 'true' || steps.selftest_next.outputs.found == 'true'
+        if: steps.editor.outputs.ready == 'true'
         run: |
           set -euo pipefail
           node scripts/spine-mask-browser-e2e.mjs
@@ -245,43 +251,43 @@ jobs:
   spine-link-full-cloud-e2e:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'full-cloud' || inputs.task == 'all')
     name: Spine-Link full cloud E2E • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-full-cloud-e2e.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   spine-link-computer-health:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'computer-health' || inputs.task == 'all')
     name: Spine-Link Computer runner health • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-computer-worker-health.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   spine-link-legacy21-import:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'legacy-import' || inputs.task == 'all')
     name: Spine-Link legacy 2.1 import • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-legacy21-import.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   spine-link-native-export:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'native-export' || inputs.task == 'all')
     name: Spine-Link native export smoke • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-native-export-smoke.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   spine-link-convert-target:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'convert-target' || inputs.task == 'all')
     name: Spine-Link requested legacy conversion • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-convert-target-legacy.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   spine-link-latest20-convert:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'latest20' || inputs.task == 'all')
     name: Spine-Link latest legacy conversions • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-spine-link-latest20-legacy-convert.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     secrets: inherit
 
   clgb71-render-audit:
     if: github.event_name == 'workflow_dispatch' && (inputs.task == 'clgb-audit' || inputs.task == 'all')
     name: CLGB71 native evidence audit • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-clgb71-render-artistic-audit.yml@1025db2941d836c0637a49ef11199bf72304c7f2
     with:
       source_run_id: ${{ inputs.source_run_id }}
     secrets: inherit
@@ -289,4 +295,4 @@ jobs:
   spine-converter-tests:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.task == 'converter' || inputs.task == 'all'))
     name: 3Spine converter container tests • public Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@11421f05d343fdc63cc30c37cdbee97ac8106ca2
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-converter-test.yml@1025db2941d836c0637a49ef11199bf72304c7f2
