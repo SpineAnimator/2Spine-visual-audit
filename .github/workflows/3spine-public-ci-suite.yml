@@ -1,0 +1,22 @@
+name: 3Spine full CI suite • public Ubuntu
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/3spine-public-ci-suite.yml'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [3spine-public-ci-suite]
+  schedule:
+    - cron: '0 4 * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: public-3spine-full-ci-suite
+  cancel-in-progress: false
+jobs:
+  full-ci:
+    name: Run 3Spine unit, browser, asset and public-site checks on public Ubuntu
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-public-ci-suite.yml@1ae9c80e274c1a3e0becafa32fbc1641527cb509
+    secrets: inherit
