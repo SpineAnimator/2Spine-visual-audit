@@ -50,7 +50,7 @@ jobs:
 
   spine-link-project-export:
     name: Spine-Link private project export checks on public Ubuntu
-    uses: SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@5f90a85ed706398cf99245f22271ba548f762e41
+    uses: SpineAnimator/Spine-Link-project-export/.github/workflows/runner.yml@2b076cd3a9ae0b76c60bf538bcf470bf43f197f5
     secrets: inherit
 
   private-storage-source-access:
