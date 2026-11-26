@@ -16,5 +16,5 @@ concurrency:
 jobs:
   public-ubuntu-saver-suite:
     name: Run private 3Spine saver suite on public GitHub-hosted Ubuntu
-    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-saver-selftest.yml@fcee8c23f4b2ad116dc12f0b57f426dde1d658ce
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-saver-selftest.yml@a441d43bf2dd090c676bc1dfa715c97f2092b38b
     secrets: inherit
