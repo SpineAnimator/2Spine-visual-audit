@@ -1,0 +1,10 @@
+name: Spine-Link latest legacy conversions on public Ubuntu
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-ubuntu:
+    name: Execute on GitHub-hosted Ubuntu 24.04
+    uses: SpineAnimator/sa-public-runner/.github/workflows/3spine-latest20.yml@1b3037c8ea93e507829f67583fc0ea29f7e70300
+    secrets: inherit
